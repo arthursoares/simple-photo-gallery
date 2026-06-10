@@ -1,5 +1,7 @@
 /**
- * Site-wide gallery configuration.
+ * Site-wide gallery configuration. Everything a fork usually needs to touch
+ * lives in this file; see README.md (humans) and AGENTS.md (coding agents)
+ * for what each knob affects.
  *
  * mode
  *   'gallery' — multi-photo/multi-album site: `/` is the gallery index
@@ -15,12 +17,12 @@
  *
  * chrome
  *   'header' — slim top bar: mark · title · counter · theme toggle.
- *   'rail'   — narrow left rail echoing the original sidebar layout.
+ *   'rail'   — narrow left rail with a vertical title.
  *   'frame'  — no bar at all; controls float in the app-frame corners.
  */
 export default {
   title: 'Photos',
-  description: 'A photo gallery.',
+  description: 'A simple-photo-gallery demo — example photos from arthur.earth.',
   author: 'Arthur Soares',
 
   mode: 'auto' as 'gallery' | 'single' | 'auto',
@@ -40,4 +42,20 @@ export default {
   /** Date format for the {date} token. */
   dateFormat: { month: 'short', day: '2-digit', year: 'numeric' } as Intl.DateTimeFormatOptions,
   locale: 'en-US',
+
+  /**
+   * Image optimization — every photo is downscaled at build time into the
+   * renditions below (sharp via astro:assets; sources can be full-res).
+   *   thumb  — Grid masonry thumbnails (srcset widths + sizes attribute)
+   *   viewer — Viewer feed / photo-essay frames
+   *   full   — the single width used by the lightbox and "full ↗" links
+   * Widths larger than a source image are skipped automatically.
+   */
+  images: {
+    thumb: { widths: [200, 400, 750], sizes: '(min-width: 768px) 280px, 50vw' },
+    viewer: { widths: [750, 1140, 1920], sizes: '(min-width: 768px) min(1100px, 92vw), 94vw' },
+    full: { width: 2000 },
+    /** 1–100; applies to all generated renditions. */
+    quality: 80,
+  },
 };

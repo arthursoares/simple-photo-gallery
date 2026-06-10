@@ -9,6 +9,8 @@ import { Image, getImage } from 'astro:assets';
 import config from '../../gallery.config';
 import { renderTemplate } from '../lib/caption';
 import { captionContext, photoExifLine, formatDate, type GalleryItem } from '../lib/photos';
+import { viewerAttrs, fullRendition } from '../lib/images';
+import { withBase } from '../lib/url';
 
 interface Props {
   item: GalleryItem;
@@ -22,7 +24,8 @@ const date = formatDate(item.date);
 const sub = isAlbum
   ? `${item.album.photos.length} photos`
   : renderTemplate(config.exifTemplate, captionContext(photo)) || photo.caption;
-const full = await getImage({ src: photo.image, width: Math.min(2000, photo.image.width) });
+const full = await getImage(fullRendition(photo.image));
+const albumHref = isAlbum ? withBase(`${item.slug}/`) : undefined;
 ---
 
 <article class="gv-entry" data-slug={item.slug} tabindex="-1">
@@ -30,8 +33,7 @@ const full = await getImage({ src: photo.image, width: Math.min(2000, photo.imag
     <Image
       class="gv-img"
       src={photo.image}
-      widths={[750, 1140, 1920]}
-      sizes="(min-width: 768px) min(1100px, 92vw), 94vw"
+      {...viewerAttrs(photo.image)}
       alt={photo.alt}
       loading="lazy"
     />
@@ -39,7 +41,7 @@ const full = await getImage({ src: photo.image, width: Math.min(2000, photo.imag
       isAlbum && (
         /* Pointer-only full-frame click target; the caption link is the
            keyboard/SR target. */
-        <a class="gv-img-link" href={`/${item.slug}/`} tabindex="-1" aria-hidden="true" />
+        <a class="gv-img-link" href={albumHref} tabindex="-1" aria-hidden="true" />
       )
     }
     <figcaption class="gv-bar">
@@ -51,7 +53,7 @@ const full = await getImage({ src: photo.image, width: Math.min(2000, photo.imag
       </span>
       {
         isAlbum ? (
-          <a class="gv-act" href={`/${item.slug}/`}>
+          <a class="gv-act" href={albumHref}>
             view album <span class="gv-act-ar">→</span>
           </a>
         ) : (

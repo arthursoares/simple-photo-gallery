@@ -5,6 +5,8 @@
  */
 import { Image } from 'astro:assets';
 import { photoCaption, type GalleryItem } from '../lib/photos';
+import { thumbAttrs } from '../lib/images';
+import { withBase } from '../lib/url';
 
 interface Props {
   item: GalleryItem;
@@ -20,15 +22,14 @@ const label = isAlbum ? item.album.title : caption;
 
 <a
   class:list={['gv-thumb', { 'gv-thumb--album': isAlbum }]}
-  href={isAlbum ? `/${item.slug}/` : `#${item.slug}`}
+  href={isAlbum ? withBase(`${item.slug}/`) : `#${item.slug}`}
   data-slug={item.slug}
   aria-label={isAlbum ? `Open photo album: ${label}` : `View ${label}`}
 >
   <Image
     class="gv-thumb-img"
     src={photo.image}
-    widths={[200, 400, 750]}
-    sizes="(min-width: 768px) 280px, 50vw"
+    {...thumbAttrs(photo.image)}
     alt={photo.alt}
     loading={index === 0 ? 'eager' : 'lazy'}
     fetchpriority={index === 0 ? 'high' : undefined}

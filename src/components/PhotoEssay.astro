@@ -6,6 +6,7 @@
  */
 import { Image, getImage } from 'astro:assets';
 import { photoCaption, photoExifLine, type Photo } from '../lib/photos';
+import { viewerAttrs, fullRendition } from '../lib/images';
 
 interface Props {
   photos: Photo[];
@@ -17,7 +18,7 @@ const frames = await Promise.all(
     photo,
     caption: photoCaption(photo) || photo.title,
     exifLine: photoExifLine(photo),
-    full: await getImage({ src: photo.image, width: Math.min(2000, photo.image.width) }),
+    full: await getImage(fullRendition(photo.image)),
   }))
 );
 ---
@@ -29,8 +30,7 @@ const frames = await Promise.all(
         <Image
           class="gv-img gx-zoomable"
           src={photo.image}
-          widths={[750, 1140, 1920]}
-          sizes="(min-width: 768px) min(1100px, 92vw), 94vw"
+          {...viewerAttrs(photo.image)}
           alt={photo.alt}
           loading={i < 2 ? 'eager' : 'lazy'}
           data-gx-full={full.src}

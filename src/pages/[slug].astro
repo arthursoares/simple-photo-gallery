@@ -7,6 +7,7 @@ import Shell from '../layouts/Shell.astro';
 import PhotoEssay from '../components/PhotoEssay.astro';
 import Lightbox from '../components/Lightbox.astro';
 import { getGallery, formatDate, type Album } from '../lib/photos';
+import { withBase } from '../lib/url';
 
 export async function getStaticPaths() {
   const gallery = await getGallery();
@@ -31,7 +32,7 @@ const excerpt = album.entry?.data.caption;
   <main class="site-main">
     <section class="w-pgh">
       <div class="w-pgh-kick">
-        <a href="/">← gallery</a>
+        <a href={withBase('')}>← gallery</a>
         <span class="w-pgh-kick-sep">·</span>
         <span class="w-pgh-kick-mark">▣</span>
         Album

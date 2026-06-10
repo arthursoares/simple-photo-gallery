@@ -1,10 +1,12 @@
 ---
 import config from '../../gallery.config';
+import { withBase } from '../lib/url';
 import '../styles/tokens.css';
 import '../styles/fonts.css';
 import '../styles/shell.css';
 import '../styles/gallery.css';
 import ThemeToggle from '../components/ThemeToggle.astro';
+import atkinsonUrl from '../assets/fonts/AtkinsonHyperlegibleNext-VariableFont_wght.woff2?url';
 
 interface Props {
   title?: string;
@@ -26,14 +28,8 @@ const chrome = config.chrome;
     <meta name="generator" content={Astro.generator} />
     <title>{pageTitle}</title>
     <meta name="description" content={description ?? config.description} />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link
-      rel="preload"
-      href="/fonts/AtkinsonHyperlegibleNext-VariableFont_wght.woff2"
-      as="font"
-      type="font/woff2"
-      crossorigin
-    />
+    <link rel="icon" type="image/svg+xml" href={withBase('favicon.svg')} />
+    <link rel="preload" href={atkinsonUrl} as="font" type="font/woff2" crossorigin />
     <script is:inline>
       /* Theme init — runs before paint so there is no flash. */
       (function () {
@@ -51,7 +47,7 @@ const chrome = config.chrome;
       {
         chrome === 'frame' && (
           <>
-            <a class="float-chip chrome-title float-chip--tl" href="/">
+            <a class="float-chip chrome-title float-chip--tl" href={withBase("")}>
               <span class="chrome-mark">▧</span> {config.title}
             </a>
             <span class="float-chip float-chip--tr">
@@ -64,7 +60,7 @@ const chrome = config.chrome;
         {
           chrome === 'header' && (
             <header class="topbar">
-              <a class="chrome-title" href="/">
+              <a class="chrome-title" href={withBase("")}>
                 <span class="chrome-mark">▧</span> {config.title}
               </a>
               {count && <span class="chrome-count">{count}</span>}
@@ -76,7 +72,7 @@ const chrome = config.chrome;
           chrome === 'rail' && (
             <aside class="rail">
               <span class="chrome-mark" aria-hidden="true">▧</span>
-              <a class="rail-title" href="/">{config.title}</a>
+              <a class="rail-title" href={withBase("")}>{config.title}</a>
               {count && <span class="chrome-count">{count}</span>}
               <ThemeToggle />
             </aside>

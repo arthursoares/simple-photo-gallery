@@ -3,13 +3,25 @@
  * Each gets EXIF written (camera, date, exposure) so the EXIF-driven
  * ordering/captions/tagging are exercised without real photographs.
  *
- *   node scripts/make-demo-photos.mjs
+ *   npm run demo            # refuses if the content folder already has photos
+ *   npm run demo -- --force # generate anyway, alongside existing content
  */
 import sharp from 'sharp';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 const ROOT = path.join(process.cwd(), 'src/content/photos');
+
+if (!process.argv.includes('--force')) {
+  const existing = await readdir(ROOT, { recursive: true }).catch(() => []);
+  if (existing.some((f) => /\.(jpe?g|png|webp|avif)$/i.test(f))) {
+    console.error(
+      'src/content/photos/ already contains photos — refusing to mix in placeholders.\n' +
+        'Run with --force to generate anyway.'
+    );
+    process.exit(1);
+  }
+}
 
 const PALETTES = [
   ['#262b7d', '#7b82d4'],

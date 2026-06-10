@@ -1,14 +1,16 @@
 /* ============================================================
-   FONTS — self-hosted from /public/fonts/. No third-party CDN.
+   FONTS — self-hosted, bundled from src/assets/fonts/ (relative
+   URLs so the GitHub Pages base path is applied automatically).
+   No third-party CDN.
 
    Atkinson Hyperlegible Next (body) ships with the repo — it is
    freely licensed by the Braille Institute.
 
    The mono face falls back to the system mono stack (see
-   --font-mono in tokens.css). If you own a license for Divenire
-   Mono (or want another mono), drop the .woff2 files into
-   /public/fonts/ and add matching @font-face rules below — the
-   token already lists 'Divenire Mono' first.
+   --font-mono in tokens.css). To self-host a mono face (e.g. a
+   licensed Divenire Mono), drop the .woff2 files into
+   src/assets/fonts/ and add matching @font-face rules below —
+   the token already lists 'Divenire Mono' first.
    ============================================================ */
 
 @font-face {
@@ -16,14 +18,14 @@
     font-style: normal;
     font-weight: 200 800;
     font-display: swap;
-    src: url('/fonts/AtkinsonHyperlegibleNext-VariableFont_wght.woff2') format('woff2');
+    src: url('../assets/fonts/AtkinsonHyperlegibleNext-VariableFont_wght.woff2') format('woff2');
 }
 @font-face {
     font-family: 'Atkinson Hyperlegible Next';
     font-style: italic;
     font-weight: 200 800;
     font-display: swap;
-    src: url('/fonts/AtkinsonHyperlegibleNext-Italic-VariableFont_wght.woff2') format('woff2');
+    src: url('../assets/fonts/AtkinsonHyperlegibleNext-Italic-VariableFont_wght.woff2') format('woff2');
 }
 
 /* @font-face {
@@ -31,5 +33,5 @@
     font-style: normal;
     font-weight: 400;
     font-display: swap;
-    src: url('/fonts/DivenireMono-Regular.woff2') format('woff2');
+    src: url('../assets/fonts/DivenireMono-Regular.woff2') format('woff2');
 } */
