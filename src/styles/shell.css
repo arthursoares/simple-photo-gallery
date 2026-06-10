@@ -333,3 +333,175 @@ button.blog-navbar-item {
     .w-pgh-title { font-size: 3.2rem; }
     .w-filter { padding: var(--space-3) var(--space-4); }
 }
+
+/* --- Chrome nav links ---------------------------------------------------- */
+.chrome-nav {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.chrome-nav a {
+    font-family: var(--font-mono);
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-mono);
+    color: var(--text-secondary);
+    padding: 2px var(--space-1);
+    text-decoration: none;
+}
+
+.chrome-nav a:hover {
+    color: var(--text-primary);
+    background: var(--pop-subtle);
+}
+
+.chrome-nav-ext {
+    color: var(--accent);
+    margin-left: 2px;
+}
+
+.rail .chrome-nav {
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.float-chip .chrome-nav {
+    margin-left: var(--space-3);
+}
+
+@media (max-width: 767px) {
+    .rail .chrome-nav { flex-direction: row; }
+}
+
+/* --- Documentation prose (.docs-prose) ----------------------------------
+   TUI long-form text for /docs/: bordered headings, hard-edged code
+   blocks and tables, accent links. */
+.docs-prose {
+    max-width: 76ch;
+    margin: 0 auto;
+    padding: var(--space-8) var(--space-6) var(--space-12);
+    font-size: 1.6rem;
+    line-height: 1.65;
+}
+
+.docs-prose h2 {
+    font-size: 2.2rem;
+    font-weight: 800;
+    letter-spacing: var(--tracking-tight);
+    border-top: var(--border-width) solid var(--border);
+    padding-top: var(--space-5);
+    margin: var(--space-10) 0 var(--space-4);
+}
+
+.docs-prose h3 {
+    font-size: 1.7rem;
+    font-weight: 800;
+    margin: var(--space-6) 0 var(--space-3);
+}
+
+.docs-prose p {
+    margin: 0 0 var(--space-4);
+}
+
+.docs-prose ul,
+.docs-prose ol {
+    margin: 0 0 var(--space-4);
+    padding-left: 2.2rem;
+}
+
+.docs-prose li {
+    margin-bottom: var(--space-1);
+}
+
+.docs-prose a {
+    color: var(--accent);
+    border-bottom: 1px solid var(--accent);
+    text-decoration: none;
+}
+
+.docs-prose a:hover {
+    background: var(--pop-subtle);
+}
+
+.docs-prose code {
+    font-family: var(--font-mono);
+    font-size: 0.88em;
+    background: var(--canvas-inset);
+    border: 1px solid var(--border-subtle);
+    padding: 0 4px;
+    hyphens: none;
+}
+
+.docs-prose pre {
+    overflow-x: auto;
+    padding: var(--space-4) var(--space-5);
+    margin: 0 0 var(--space-5);
+    font-family: var(--font-mono);
+    font-size: 1.3rem;
+    line-height: 1.5;
+    background: var(--canvas-raised);
+    border: var(--border-width) solid var(--border);
+    box-shadow: var(--shadow-sm);
+    hyphens: none;
+}
+
+.docs-prose pre code {
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: inherit;
+}
+
+.docs-prose table {
+    width: 100%;
+    border-collapse: collapse;
+    border: var(--border-width) solid var(--border);
+    margin: 0 0 var(--space-5);
+    font-size: 1.4rem;
+}
+
+.docs-prose thead {
+    background: var(--canvas-raised);
+}
+
+.docs-prose th {
+    text-align: left;
+    font-family: var(--font-mono);
+    font-size: 1.1rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-wide);
+    border-bottom: var(--border-width) solid var(--border);
+}
+
+.docs-prose th,
+.docs-prose td {
+    padding: var(--space-2) var(--space-3);
+    vertical-align: top;
+}
+
+.docs-prose tr + tr {
+    border-top: 1px solid var(--border-subtle);
+}
+
+.docs-prose kbd {
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    background: var(--canvas);
+    border: 1px solid var(--border);
+    box-shadow: 2px 2px 0 var(--border-subtle);
+    padding: 0 5px;
+}
+
+.docs-prose .docs-lead {
+    font-size: 1.8rem;
+    color: var(--text-secondary);
+}
+
+@media (max-width: 767px) {
+    .docs-prose {
+        padding: var(--space-6) var(--space-4) var(--space-8);
+    }
+}

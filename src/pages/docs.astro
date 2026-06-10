@@ -1,0 +1,278 @@
+---
+/**
+ * /docs/ — on-site documentation: what the project is, how to deploy your
+ * own, the content model, configuration, and keyboard shortcuts.
+ */
+import Shell from '../layouts/Shell.astro';
+import { withBase } from '../lib/url';
+
+const REPO = 'https://github.com/arthursoares/simple-photo-gallery';
+---
+
+<Shell title="Documentation" description="How simple-photo-gallery works: deploy your own, content model, configuration, shortcuts.">
+  <main class="site-main">
+    <section class="w-pgh">
+      <div class="w-pgh-kick">
+        <a href={withBase('')}>← gallery</a>
+        <span class="w-pgh-kick-sep">·</span>
+        <span class="w-pgh-kick-mark">▤</span>
+        Documentation
+      </div>
+      <h1 class="w-pgh-title">simple-photo-gallery</h1>
+      <p class="w-pgh-excerpt">
+        A fork-and-deploy photo gallery for Astro + GitHub Pages. Drop photos in a folder,
+        push, get this site.
+      </p>
+    </section>
+
+    <article class="docs-prose">
+      <p class="docs-lead">
+        This site is its own documentation: everything you see — the masonry grid, the
+        full-bleed viewer, the album pages, the lightbox — is what you get by forking
+        <a href={REPO}>the repository</a> and pushing your own photos. No database, no CMS,
+        no client framework: photos and optional markdown go in, a fully static site comes out.
+      </p>
+
+      <h2>Deploy your own</h2>
+      <ol>
+        <li><strong>Fork</strong> (or "Use this template") <a href={REPO}>the repository</a>.</li>
+        <li>
+          In your fork: <strong>Settings → Pages → Build and deployment → Source →
+          "GitHub Actions"</strong>. This is the only manual setting.
+        </li>
+        <li>
+          Replace the contents of <code>src/content/photos/</code> with your photos, edit
+          <code>gallery.config.ts</code>, push to <code>main</code>.
+        </li>
+      </ol>
+      <p>
+        The bundled workflow builds and publishes on every push, auto-detecting your Pages
+        URL — user site, project site, or custom domain. To work locally:
+      </p>
+      <pre><code>npm install
+npm run dev        # http://localhost:4321
+npm run demo       # placeholder photos (with EXIF) if you have none yet</code></pre>
+
+      <h2>Content model</h2>
+      <p>
+        Inside <code>src/content/photos/</code>, <strong>a folder is an album</strong> and
+        <strong>a loose image is a single photo</strong>. Markdown is optional everywhere:
+      </p>
+      <pre><code>src/content/photos/
+├── sicily-terrasini/        ← album → /sicily-terrasini/
+│   ├── index.md             ← optional: title, date, writeup, captions, order
+│   └── *.jpg
+├── snow.jpg                 ← single photo
+├── snow.md                  ← optional sidecar (same basename)
+└── 2025-03-08-bicycle.jpg   ← date parsed from the filename</code></pre>
+      <p>An album's <code>index.md</code> can curate everything:</p>
+      <pre><code>---
+title: "Sicily: Terrasini"
+date: 2025-04-18
+caption: First stop of a Sicilian Easter.   # album excerpt
+cover: L1001243.jpg        # index thumbnail (default: first photo)
+draft: false               # hide the whole album
+tags: [travel, sicily]
+photos:                    # explicit order — wins over everything
+  - file: L1001243.jpg
+    caption: Ceramic heads in a Terrasini storefront
+  - file: L1001235.jpg
+---
+The markdown body is the album writeup, shown above the photos.</code></pre>
+      <p>
+        A loose photo's sidecar takes <code>title</code>, <code>caption</code>,
+        <code>alt</code>, <code>date</code>, <code>tags</code>, <code>draft</code>.
+      </p>
+
+      <h3>Ordering</h3>
+      <p>Per album (and for loose photos), the first applicable source wins:</p>
+      <ol>
+        <li><code>photos:</code> list in <code>index.md</code> — curation beats everything.</li>
+        <li>Numeric filename prefix — <code>01-…</code>, <code>02-…</code></li>
+        <li>EXIF <code>DateTimeOriginal</code> — chronological shooting order.</li>
+        <li>Date in the filename — <code>YYYY-MM-DD-…</code></li>
+        <li>Filename, alphabetical — deterministic fallback.</li>
+      </ol>
+      <p>
+        The gallery index sorts items (singles + albums) newest-first; an album's date is its
+        frontmatter <code>date</code>, else its newest photo.
+      </p>
+
+      <h3>EXIF</h3>
+      <p>
+        EXIF is read at build time — nothing ships to the client. It feeds ordering (above),
+        naming (markdown title → XMP/IPTC title → humanized filename), tags (frontmatter ∪
+        IPTC/XMP keywords), and the caption templates below.
+      </p>
+
+      <h2>Configuration</h2>
+      <p>One file — <code>gallery.config.ts</code> — controls the site:</p>
+      <table>
+        <thead>
+          <tr><th>Key</th><th>What it does</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>title</code> · <code>description</code> · <code>author</code></td>
+            <td>Chrome title, <code>&lt;title&gt;</code>/meta, page header.</td>
+          </tr>
+          <tr>
+            <td><code>mode</code></td>
+            <td>
+              <code>gallery</code> (index + album pages) · <code>single</code> (the whole
+              site is one album) · <code>auto</code> (single when content is exactly one album).
+            </td>
+          </tr>
+          <tr>
+            <td><code>presentation</code></td>
+            <td>
+              Single mode only: <code>grid</code> (Grid ⇄ Viewer) or <code>essay</code>
+              (writeup + scrolling photo feed).
+            </td>
+          </tr>
+          <tr>
+            <td><code>chrome</code></td>
+            <td>
+              Shell variant: <code>header</code> (top bar — this site) ·
+              <code>rail</code> (vertical left rail) · <code>frame</code> (floating corner chips).
+            </td>
+          </tr>
+          <tr>
+            <td><code>nav</code></td>
+            <td>
+              Manual chrome links (like "github" above). Markdown entry pages with
+              <code>nav: true</code> are listed automatically before these.
+            </td>
+          </tr>
+          <tr>
+            <td><code>captionTemplate</code> · <code>exifTemplate</code></td>
+            <td>
+              Caption assembly. Tokens: <code>&#123;title&#125;</code> <code>&#123;caption&#125;</code>
+              <code>&#123;date&#125;</code> <code>&#123;camera&#125;</code> <code>&#123;lens&#125;</code>
+              <code>&#123;focal&#125;</code> <code>&#123;aperture&#125;</code> <code>&#123;shutter&#125;</code>
+              <code>&#123;iso&#125;</code> <code>&#123;keywords&#125;</code>. Templates split on
+              <code>·</code>; a segment whose tokens all resolve empty is dropped, so missing
+              EXIF degrades gracefully.
+            </td>
+          </tr>
+          <tr>
+            <td><code>images</code></td>
+            <td>
+              Build-time renditions: <code>thumb</code> / <code>viewer</code> widths +
+              <code>sizes</code>, <code>full</code> width (lightbox), <code>quality</code>.
+              Sources can be full-resolution; sharp downscales (never upscales) to WebP.
+            </td>
+          </tr>
+          <tr>
+            <td><code>dateFormat</code> · <code>locale</code></td>
+            <td>Formatting for the <code>&#123;date&#125;</code> token.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>Entry pages</h2>
+      <p>
+        A photo site usually needs a page or two that aren't photos — an about page, a
+        colophon, an imprint. Drop a markdown file into <code>src/content/pages/</code> and it
+        becomes a standalone page at <code>/&lt;filename&gt;/</code>, rendered in this
+        documentation style and linked from the site menu (the
+        <a href={withBase('about/')}>About page</a> in the chrome above is exactly that —
+        one markdown file, no template code):
+      </p>
+      <pre><code>---
+title: About
+description: Header excerpt + meta description.
+mark: '✶'        # kick-line glyph (default ▤)
+nav: true        # show in the chrome menu (default)
+navLabel: about  # menu label (default: lowercased title)
+order: 1         # menu position
+draft: false
+---
+
+Standard markdown body — GFM tables, code blocks, images,
+inline HTML all render like this page you are reading.</code></pre>
+      <p>
+        Menu order is entry pages first (by <code>order</code>), then the manual
+        <code>nav</code> links from <code>gallery.config.ts</code>. A page whose filename
+        matches an album folder collides — the build fails loudly rather than shadowing the
+        album. For full control (custom components, tables like the ones on this page), write
+        an <code>.astro</code> file in <code>src/pages/</code> instead and link it via
+        <code>nav</code> in the config — this docs page is built that way.
+      </p>
+
+      <h2>Using the gallery</h2>
+      <ul>
+        <li>
+          <strong>Grid</strong> — row-first masonry. Albums carry a <code>▣ Album</code> pill
+          and link to their page; single photos open the Viewer in place.
+        </li>
+        <li>
+          <strong>Viewer</strong> — one photo per screen, normal scrolling. The current photo's
+          slug lands in the URL, so <code>/#&lt;slug&gt;</code> deep-links work.
+        </li>
+        <li>
+          <strong>Album pages</strong> — writeup + photo feed; click a photo for the lightbox.
+        </li>
+      </ul>
+      <table>
+        <thead>
+          <tr><th>Keys</th><th>Viewer</th><th>Lightbox</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><kbd>←</kbd> <kbd>→</kbd> <kbd>↑</kbd> <kbd>↓</kbd> / <kbd>j</kbd> <kbd>k</kbd></td>
+            <td>previous / next photo</td>
+            <td>previous / next photo</td>
+          </tr>
+          <tr>
+            <td><kbd>Home</kbd> / <kbd>End</kbd></td>
+            <td>first / last photo</td>
+            <td>first / last photo</td>
+          </tr>
+          <tr>
+            <td><kbd>Esc</kbd></td>
+            <td>back to the grid</td>
+            <td>close</td>
+          </tr>
+          <tr>
+            <td><kbd>Enter</kbd></td>
+            <td>open the photo's action link</td>
+            <td>—</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>On touch, swipe left/right navigates the lightbox.</p>
+
+      <h2>Customizing</h2>
+      <ul>
+        <li>
+          <strong>Colors / typography</strong> — design tokens (light + dark) live in
+          <code>src/styles/tokens.css</code>; components consume tokens only.
+        </li>
+        <li>
+          <strong>Fonts</strong> — Atkinson Hyperlegible Next ships with the repo; the mono
+          face falls back to your system stack (add <code>.woff2</code> files +
+          <code>@font-face</code> rules to self-host one).
+        </li>
+        <li>
+          <strong>With a coding agent</strong> — <code>AGENTS.md</code> in the repo documents
+          the architecture, gotchas, design-system rules, and extension recipes (new chrome
+          variants, caption tokens, tag pages…).
+        </li>
+      </ul>
+      <p>
+        The design system ("Modern TUI") has four rules: hard edges
+        (<code>border-radius: 0</code>), solid shadows (hard offsets, no blur), type carries
+        the design, and instant state (no transitions). Extracted from the gallery system of
+        the author's Ghost theme and rebuilt on Astro content collections.
+      </p>
+
+      <h2>License</h2>
+      <p>
+        Code is MIT. The example photographs on this demo are
+        © <a href="https://arthur.earth">Arthur Soares</a> and are <em>not</em> MIT —
+        replace them with your own when forking.
+      </p>
+    </article>
+  </main>
+</Shell>

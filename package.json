@@ -1,6 +1,6 @@
 {
   "name": "simple-photo-gallery",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "A fork-and-deploy photo gallery for Astro + GitHub Pages — Modern-TUI design, masonry grid, full-bleed viewer, EXIF-driven captions. Single-album or multi-album.",
   "type": "module",
   "scripts": {

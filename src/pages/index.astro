@@ -10,14 +10,16 @@ import { getGallery, formatDate, type GalleryItem } from '../lib/photos';
 const gallery = await getGallery();
 
 /* Single mode: the site IS one album. If the content folder only holds loose
-   photos, treat them as that album. */
-const single = gallery.mode === 'single';
+   photos, treat them as that album. With no content at all (forced single
+   mode, empty folder), fall back to gallery rendering — it has the proper
+   empty state. */
+const single = gallery.mode === 'single' && (gallery.albums.length > 0 || gallery.singles.length > 0);
 const album = single
   ? (gallery.albums[0] ?? {
       slug: 'photos',
       title: config.title,
       date: undefined,
-      cover: gallery.singles[0],
+      cover: gallery.singles[0]!,
       photos: gallery.singles,
       tags: [],
       entry: undefined,

@@ -1,6 +1,7 @@
 ---
 import config from '../../gallery.config';
 import { withBase } from '../lib/url';
+import { navPages } from '../lib/pages';
 import '../styles/tokens.css';
 import '../styles/fonts.css';
 import '../styles/shell.css';
@@ -18,6 +19,21 @@ interface Props {
 const { title, description, count } = Astro.props;
 const pageTitle = title ? `${title} — ${config.title}` : config.title;
 const chrome = config.chrome;
+/* Chrome menu = markdown entry pages (src/content/pages/, nav: true)
+   followed by the manual links from gallery.config nav. */
+const pageLinks = (await navPages()).map((p) => ({
+  label: p.data.navLabel ?? p.data.title.toLowerCase(),
+  href: withBase(`${p.id}/`),
+  external: false,
+}));
+const configLinks = (config.nav ?? []).map((link) => {
+  // Any scheme (https:, mailto:, tel:, …) is left untouched; only http(s)
+  // gets the new-tab treatment; everything else is an internal path.
+  const hasScheme = /^[a-z][a-z0-9+.-]*:/i.test(link.href);
+  const external = /^https?:\/\//.test(link.href);
+  return { ...link, external, href: hasScheme ? link.href : withBase(link.href) };
+});
+const nav = [...pageLinks, ...configLinks];
 ---
 
 <!doctype html>
@@ -47,9 +63,18 @@ const chrome = config.chrome;
       {
         chrome === 'frame' && (
           <>
-            <a class="float-chip chrome-title float-chip--tl" href={withBase("")}>
-              <span class="chrome-mark">▧</span> {config.title}
-            </a>
+            <span class="float-chip float-chip--tl">
+              <a class="chrome-title" href={withBase("")}>
+                <span class="chrome-mark">▧</span> {config.title}
+              </a>
+              <nav class="chrome-nav">
+                {nav.map((l) => (
+                  <a href={l.href} target={l.external ? '_blank' : undefined} rel={l.external ? 'noopener' : undefined}>
+                    {l.label}
+                  </a>
+                ))}
+              </nav>
+            </span>
             <span class="float-chip float-chip--tr">
               <ThemeToggle />
             </span>
@@ -63,6 +88,13 @@ const chrome = config.chrome;
               <a class="chrome-title" href={withBase("")}>
                 <span class="chrome-mark">▧</span> {config.title}
               </a>
+              <nav class="chrome-nav">
+                {nav.map((l) => (
+                  <a href={l.href} target={l.external ? '_blank' : undefined} rel={l.external ? 'noopener' : undefined}>
+                    {l.label}{l.external && <span class="chrome-nav-ext">↗</span>}
+                  </a>
+                ))}
+              </nav>
               {count && <span class="chrome-count">{count}</span>}
               <ThemeToggle />
             </header>
@@ -73,6 +105,13 @@ const chrome = config.chrome;
             <aside class="rail">
               <span class="chrome-mark" aria-hidden="true">▧</span>
               <a class="rail-title" href={withBase("")}>{config.title}</a>
+              <nav class="chrome-nav">
+                {nav.map((l) => (
+                  <a href={l.href} target={l.external ? '_blank' : undefined} rel={l.external ? 'noopener' : undefined}>
+                    {l.label}
+                  </a>
+                ))}
+              </nav>
               {count && <span class="chrome-count">{count}</span>}
               <ThemeToggle />
             </aside>

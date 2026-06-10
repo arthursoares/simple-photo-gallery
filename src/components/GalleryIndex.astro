@@ -57,7 +57,7 @@ const countLabel = albumCount
           <span class="gv-status-hint">↑↓ navigate · esc grid</span>
           <span class="gv-status-sep">·</span>
           <span class="gv-status-count" role="status" aria-live="polite">
-            <b class="gv-cur">1</b> / <span class="gv-total">0</span>
+            <b class="gv-cur">1</b> / <span class="gv-total">{items.length}</span>
           </span>
         </div>
       </div>
@@ -311,8 +311,12 @@ const countLabel = albumCount
       }
     });
 
-    /* Deep-link: /#<slug> opens the Viewer at that photo. */
-    const slug = (location.hash || '').replace(/^#/, '');
+    /* Deep-link: /#<slug> opens the Viewer at that photo. Decode in case the
+       browser or a sharing tool percent-encoded the fragment. */
+    let slug = (location.hash || '').replace(/^#/, '');
+    try {
+      slug = decodeURIComponent(slug);
+    } catch {}
     const target = entryBySlug(slug);
     if (target) enterViewer(entries.indexOf(target));
   }

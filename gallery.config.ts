@@ -30,6 +30,16 @@ export default {
   chrome: 'header' as 'header' | 'rail' | 'frame',
 
   /**
+   * Extra links in the site chrome (all variants). Internal hrefs are
+   * relative to the site root (base path is applied automatically);
+   * absolute http(s) URLs open in a new tab.
+   */
+  nav: [
+    { label: 'docs', href: 'docs/' },
+    { label: 'github', href: 'https://github.com/arthursoares/simple-photo-gallery' },
+  ] as { label: string; href: string }[],
+
+  /**
    * Caption templates. Tokens come from sidecar/index.md metadata first,
    * then EXIF: {title} {caption} {date} {camera} {lens} {focal} {aperture}
    * {shutter} {iso} {keywords}. Segments are split on '·' — a segment whose

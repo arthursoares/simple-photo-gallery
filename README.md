@@ -67,8 +67,20 @@ photos:                      # explicit order — wins over everything;
 The markdown body is the album writeup, shown above the photos.
 ```
 
-A loose photo's sidecar (`snow.md`) takes `title`, `caption`, `alt`, `date`,
-`tags`, `draft`.
+A photo's sidecar (`snow.md`, also next to images inside album folders) takes
+`title`, `caption`, `alt`, `date`, `tags`, `draft`.
+
+### Entry pages (about, colophon, imprint…)
+
+Markdown files in `src/content/pages/` become standalone pages at
+`/<filename>/`, rendered in the documentation style and linked from the site
+menu automatically (the demo's [About page](https://arthursoares.github.io/simple-photo-gallery/about/)
+is one). Frontmatter: `title`, `description`, `mark` (kick-line glyph),
+`nav`/`navLabel`/`order` (menu visibility, label, position), `draft`. The
+body is standard markdown — GFM tables, code blocks, inline HTML. Menu order
+is entry pages first, then the manual `nav` links from `gallery.config.ts`;
+for fully custom pages, write an `.astro` file in `src/pages/` instead (the
+demo's `/docs/` page is built that way).
 
 ### Ordering
 

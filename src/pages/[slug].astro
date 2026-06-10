@@ -1,64 +1,115 @@
 ---
 /**
- * Album page (gallery mode) — writeup + photo-essay feed + lightbox.
+ * Root-level dynamic route serving two kinds of paths:
+ *   - album pages (gallery mode): writeup + photo-essay feed + lightbox
+ *   - entry pages (src/content/pages/*.md): markdown in the docs style
+ * A markdown page whose filename matches an album folder collides — the
+ * build fails on the duplicate path, which is the desired signal.
  */
 import { render } from 'astro:content';
 import Shell from '../layouts/Shell.astro';
 import PhotoEssay from '../components/PhotoEssay.astro';
 import Lightbox from '../components/Lightbox.astro';
 import { getGallery, formatDate, type Album } from '../lib/photos';
+import { getPages, type PageEntry } from '../lib/pages';
 import { withBase } from '../lib/url';
 
 export async function getStaticPaths() {
   const gallery = await getGallery();
-  if (gallery.mode !== 'gallery') return [];
-  return gallery.albums.map((album) => ({
-    params: { slug: album.slug },
-    props: { album },
+  const pages = await getPages();
+  const albumPaths =
+    gallery.mode === 'gallery'
+      ? gallery.albums.map((album) => ({
+          params: { slug: album.slug },
+          props: { album, page: null },
+        }))
+      : [];
+  const pagePaths = pages.map((page) => ({
+    params: { slug: page.id },
+    props: { album: null, page },
   }));
+
+  /* Fail the build loudly on slug collisions instead of letting one route
+     silently shadow another. RESERVED covers static .astro routes. */
+  const RESERVED = new Set(['docs']);
+  const seen = new Set<string>();
+  for (const { params } of [...albumPaths, ...pagePaths]) {
+    if (RESERVED.has(params.slug))
+      throw new Error(
+        `Slug collision: "${params.slug}" is a built-in page (src/pages/${params.slug}.astro). ` +
+          'Rename the album folder or markdown page.'
+      );
+    if (seen.has(params.slug))
+      throw new Error(
+        `Slug collision: an album folder and a page in src/content/pages/ both resolve to "/${params.slug}/". ` +
+          'Rename one of them.'
+      );
+    seen.add(params.slug);
+  }
+
+  return [...albumPaths, ...pagePaths];
 }
 
 interface Props {
-  album: Album;
+  album: Album | null;
+  page: PageEntry | null;
 }
 
-const { album } = Astro.props;
-const date = formatDate(album.date);
-const Writeup = album.entry ? (await render(album.entry)).Content : null;
-const excerpt = album.entry?.data.caption;
+const { album, page } = Astro.props;
+
+const date = album ? formatDate(album.date) : undefined;
+const entry = album?.entry ?? page;
+const Writeup = entry ? (await render(entry)).Content : null;
+const excerpt = album ? album.entry?.data.caption : page!.data.description;
+const title = album ? album.title : page!.data.title;
 ---
 
-<Shell title={album.title} description={excerpt} count={`${album.photos.length} photos`}>
+<Shell title={title} description={excerpt} count={album ? `${album.photos.length} photos` : undefined}>
   <main class="site-main">
     <section class="w-pgh">
       <div class="w-pgh-kick">
         <a href={withBase('')}>← gallery</a>
         <span class="w-pgh-kick-sep">·</span>
-        <span class="w-pgh-kick-mark">▣</span>
-        Album
         {
-          date && (
+          album ? (
             <>
+              <span class="w-pgh-kick-mark">▣</span>
+              Album
+              {date && (
+                <>
+                  <span class="w-pgh-kick-sep">·</span>
+                  <span>{date}</span>
+                </>
+              )}
               <span class="w-pgh-kick-sep">·</span>
-              <span>{date}</span>
+              <span>{album.photos.length} photos</span>
+            </>
+          ) : (
+            <>
+              <span class="w-pgh-kick-mark">{page!.data.mark}</span>
+              {title}
             </>
           )
         }
-        <span class="w-pgh-kick-sep">·</span>
-        <span>{album.photos.length} photos</span>
       </div>
-      <h1 class="w-pgh-title">{album.title}</h1>
+      <h1 class="w-pgh-title">{title}</h1>
       {excerpt && <p class="w-pgh-excerpt">{excerpt}</p>}
     </section>
 
     {
-      Writeup && (
-        <div class="pe-writeup">
-          <Writeup />
-        </div>
+      album ? (
+        <>
+          {Writeup && (
+            <div class="pe-writeup">
+              <Writeup />
+            </div>
+          )}
+          <PhotoEssay photos={album.photos} />
+        </>
+      ) : (
+        <article class="docs-prose">{Writeup && <Writeup />}</article>
       )
     }
-    <PhotoEssay photos={album.photos} />
   </main>
-  <Lightbox />
+  {album && <Lightbox />}
 </Shell>

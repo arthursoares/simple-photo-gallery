@@ -81,11 +81,18 @@ export interface Gallery {
 
 /* ---------------------------------------------------------------- helpers */
 
-const slugify = (s: string) =>
-  s
+const slugify = (s: string) => {
+  const slug = s
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
+  // Names with no ASCII alphanumerics (e.g. '東京.jpg') would slug to '' —
+  // fall back to a stable hash so the slug stays unique and non-empty.
+  if (slug) return slug;
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return 'p-' + h.toString(36);
+};
 
 const FILE_PREFIX = /^(\d{1,4})[-_ ]+/;
 const FILE_DATE = /^(\d{4})-(\d{2})-(\d{2})[-_ ]*/;
@@ -143,12 +150,14 @@ async function readExif(fsPath: string): Promise<ExifInfo> {
     const make = firstString(d.Make);
     const model = firstString(d.Model);
     const camera = model && make && !model.startsWith(make) ? `${make} ${model}` : model || make;
-    const date: Date | undefined =
-      d.DateTimeOriginal instanceof Date
-        ? d.DateTimeOriginal
-        : d.CreateDate instanceof Date
-          ? d.CreateDate
-          : undefined;
+    // Guard against Invalid Date — malformed EXIF would otherwise blow up
+    // Intl.DateTimeFormat at render time.
+    const validDate = (v: unknown): v is Date => v instanceof Date && !isNaN(v.getTime());
+    const date: Date | undefined = validDate(d.DateTimeOriginal)
+      ? d.DateTimeOriginal
+      : validDate(d.CreateDate)
+        ? d.CreateDate
+        : undefined;
     return {
       date,
       camera,
@@ -246,11 +255,13 @@ async function build(): Promise<Gallery> {
   const metaByPath = new Map(
     allMeta.filter((e) => !e.data.draft).map((e) => [relPath(e), e])
   );
+  const draftEntries = allMeta.filter((e) => e.data.draft).map(relPath);
   const draftFolders = new Set(
-    allMeta
-      .filter((e) => e.data.draft && relPath(e).endsWith('/index'))
-      .map((e) => relPath(e).slice(0, -'/index'.length))
+    draftEntries.filter((p) => p.endsWith('/index')).map((p) => p.slice(0, -'/index'.length))
   );
+  // Per-photo draft sidecars ('shot.md' with draft: true) hide that photo —
+  // both loose and inside albums.
+  const draftPhotos = new Set(draftEntries.filter((p) => !p.endsWith('/index')));
 
   const byFolder = new Map<string | null, string[]>();
   for (const key of Object.keys(IMAGES)) {
@@ -258,6 +269,7 @@ async function build(): Promise<Gallery> {
     const parts = rel.split('/');
     const folder = parts.length > 1 ? parts[0] : null;
     if (folder && draftFolders.has(folder)) continue;
+    if (draftPhotos.has(rel.replace(/\.[^.]+$/, ''))) continue;
     if (!byFolder.has(folder)) byFolder.set(folder, []);
     byFolder.get(folder)!.push(key);
   }
@@ -276,7 +288,13 @@ async function build(): Promise<Gallery> {
     const entry = metaByPath.get(`${folder}/index`);
     const albumSlug = slugify(folder);
     const photos = applyExplicitOrder(
-      await Promise.all(keys.map((key) => buildPhoto(key, albumSlug, {}))),
+      await Promise.all(
+        keys.map((key) => {
+          // Per-photo sidecars work inside albums too: <folder>/<base>.md
+          const base = key.split('/').pop()!.replace(/\.[^.]+$/, '');
+          return buildPhoto(key, albumSlug, {}, metaByPath.get(`${folder}/${base}`));
+        })
+      ),
       entry
     );
     if (!photos.length) continue;

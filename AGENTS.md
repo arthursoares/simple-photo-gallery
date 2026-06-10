@@ -33,16 +33,21 @@ button), and the lightbox (click a photo on an album page).
 src/content/photos/**            photos + optional .md metadata (authoring surface)
 src/content.config.ts            zod schema for the markdown ('meta' collection)
 gallery.config.ts                ALL site configuration (see below)
+src/content/pages/*.md           standalone "entry pages" (about, colophon…) —
+                                   published at /<filename>/, auto-linked in the menu
 src/lib/photos.ts                ★ data layer: scans images, reads EXIF (exifr),
                                    resolves ordering/naming/caption chains,
                                    builds { mode, albums, singles, items }
+src/lib/pages.ts                 entry-pages collection access (getPages/navPages)
 src/lib/caption.ts               '{token} · {token}' template renderer
 src/lib/images.ts                rendition presets from config.images
 src/lib/url.ts                   withBase() — base-path-safe internal URLs
 src/pages/index.astro            '/' — dispatches on mode (gallery|single) and
                                    presentation (grid|essay)
-src/pages/[slug].astro           album pages (gallery mode only)
-src/layouts/Shell.astro          html shell + chrome variants (header|rail|frame)
+src/pages/[slug].astro           album pages (gallery mode) + markdown entry pages
+src/pages/docs.astro             hand-written documentation page (.docs-prose styles)
+src/layouts/Shell.astro          html shell + chrome variants (header|rail|frame);
+                                   menu = entry pages (nav:true) + config.nav links
 src/components/
   GalleryIndex.astro             Grid ⇄ Viewer experience + all its JS (masonry,
                                    keyboard nav, IntersectionObserver, #slug deep links)
@@ -60,14 +65,25 @@ src/styles/
 ## Content model invariants
 
 - Folder under `src/content/photos/` = album; loose image = single photo.
-- `<folder>/index.md` = album metadata + writeup; `<basename>.md` next to a
-  loose image = its sidecar. Everything optional.
+- `<folder>/index.md` = album metadata + writeup; `<basename>.md` next to an
+  image = its sidecar (works for loose photos AND inside album folders).
+  Everything optional. `draft: true` on an album's index.md hides the album;
+  on a photo sidecar it hides that photo.
+- Slugs are ASCII-lowercase (`slugify` in photos.ts); names with no ASCII
+  alphanumerics fall back to a stable hash (`p-…`), and there is no
+  transliteration — distinct names can collide (e.g. `a b` / `a-b`). Album ↔
+  entry-page ↔ built-in route collisions fail the build with a clear error
+  ([slug].astro getStaticPaths).
 - **Ordering chain** (photos.ts): explicit `photos:` list → numeric filename
   prefix → EXIF DateTimeOriginal → filename date (YYYY-MM-DD-…) → filename.
 - **Naming chain**: markdown title → EXIF/XMP/IPTC title → humanized filename.
 - **Tags**: frontmatter `tags` ∪ IPTC/XMP keywords.
 - A photo's site-wide slug is `album-slug/file-slug` or `file-slug`; the
   gallery index deep-links Viewer position as `/#<slug>`.
+- **Entry pages**: `src/content/pages/<name>.md` → `/<name>/`, rendered in
+  `.docs-prose` style by [slug].astro. Frontmatter: `title`, `description`,
+  `mark`, `nav`/`navLabel`/`order`, `draft`. A page filename that matches an
+  album folder collides → duplicate-path build error (intentional).
 
 ## Configuration semantics (gallery.config.ts)
 
@@ -125,9 +141,13 @@ src/styles/
 - **New caption token**: add the field to `ExifInfo`/`captionContext()` in
   photos.ts (and read it in `readExif()` if EXIF-sourced). Document it in
   gallery.config.ts's comment and README.
-- **New page** (e.g. /about): create `src/pages/about.astro`, wrap content
-  in `<Shell>`, use the `.w-pgh` header pattern; link it from Shell chrome
-  with `withBase('about/')`.
+- **New page** (e.g. /about): usually just drop a markdown file in
+  `src/content/pages/` — it's published and added to the menu automatically.
+  Only write a custom `src/pages/*.astro` (wrap in `<Shell>`, `.w-pgh`
+  header, `.docs-prose` body; add to `nav` in gallery.config.ts) when the
+  page needs components or markup markdown can't express — see docs.astro.
+  In `.astro` prose, never write `{'{…}'}`-style brace expressions — the
+  compiler mis-parses them (unclosed-element corruption); use `&#123;`/`&#125;`.
 - **Tag filtering UI**: photo tags are already collected (`photo.tags`);
   render filter buttons with the `.blog-navbar-item` style (shell.css) and
   filter client-side by `data-slug`, or generate `/tag/<t>/` pages from

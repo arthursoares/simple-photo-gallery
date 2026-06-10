@@ -2,15 +2,23 @@
 /* Light/dark toggle — instant state, persisted to localStorage. */
 ---
 
-<button type="button" class="theme-toggle" aria-label="Toggle dark mode">◐</button>
+<button type="button" class="theme-toggle" aria-label="Dark mode" aria-pressed="false">◐</button>
 
 <script>
+  const sync = () => {
+    const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+    document.querySelectorAll('.theme-toggle').forEach((btn) => {
+      btn.setAttribute('aria-pressed', dark ? 'true' : 'false');
+    });
+  };
+  sync();
   document.querySelectorAll('.theme-toggle').forEach((btn) => {
     btn.addEventListener('click', () => {
       const root = document.documentElement;
       const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
       root.setAttribute('data-theme', next);
       localStorage.setItem('theme', next);
+      sync();
     });
   });
 </script>
