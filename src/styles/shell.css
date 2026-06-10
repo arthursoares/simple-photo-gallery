@@ -329,9 +329,48 @@ button.blog-navbar-item {
     .rail .chrome-count { margin-top: 0; margin-left: auto; }
     .rail .theme-toggle { margin-top: 0; margin-left: var(--space-3); }
 
+    /* One uncramped bar: the photo count is redundant with the page-header
+       kick line, so drop it; the title and toggle never shrink; the nav gets
+       the remaining width and scrolls horizontally if links overflow —
+       nothing clips, nothing wraps. */
+    .topbar .chrome-count,
+    .rail .chrome-count { display: none; }
+    .topbar { gap: var(--space-3); padding: 0 var(--space-4); }
+    .topbar .chrome-title,
+    .rail .rail-title,
+    .topbar .theme-toggle,
+    .rail .theme-toggle { flex-shrink: 0; }
+    .topbar .chrome-nav,
+    .rail .chrome-nav {
+        flex: 1;
+        min-width: 0;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+    .topbar .chrome-nav::-webkit-scrollbar,
+    .rail .chrome-nav::-webkit-scrollbar { display: none; }
+    .topbar .theme-toggle,
+    .rail .theme-toggle { margin-left: auto; }
+
+    /* Frame chrome: cap the floating title chip so it never reaches the
+       theme-toggle chip; its nav scrolls within the chip. */
+    .float-chip--tl { max-width: calc(100vw - 88px); }
+    .float-chip .chrome-nav {
+        min-width: 0;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+
     .w-pgh { padding: var(--space-8) var(--space-6) var(--space-5); }
     .w-pgh-title { font-size: 3.2rem; }
-    .w-filter { padding: var(--space-3) var(--space-4); }
+    /* Keep the view buttons side by side; the count wraps to its own row
+       instead of squeezing the buttons into a vertical stack. */
+    .w-filter {
+        padding: var(--space-3) var(--space-4);
+        flex-wrap: wrap;
+        row-gap: var(--space-2);
+    }
+    .w-filter .blog-navbar { flex-wrap: nowrap; }
 }
 
 /* --- Chrome nav links ---------------------------------------------------- */
@@ -350,6 +389,7 @@ button.blog-navbar-item {
     color: var(--text-secondary);
     padding: 2px var(--space-1);
     text-decoration: none;
+    white-space: nowrap;
 }
 
 .chrome-nav a:hover {
