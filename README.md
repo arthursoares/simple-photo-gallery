@@ -123,6 +123,7 @@ export default {
                              // auto: exactly one album & no loose photos → single
   presentation: 'grid',      // single mode: 'grid' (Grid ⇄ Viewer) | 'essay'
   chrome: 'header',          // 'header' | 'rail' | 'frame' (see below)
+  mobileNav: 'kebab',        // phone menu: 'kebab' (⋮ dropdown) | 'inline' (scrolling links)
 
   // Captions are assembled from templates. Tokens: {title} {caption} {date}
   // {camera} {lens} {focal} {aperture} {shutter} {iso} {keywords}.

@@ -7,6 +7,7 @@ import '../styles/fonts.css';
 import '../styles/shell.css';
 import '../styles/gallery.css';
 import ThemeToggle from '../components/ThemeToggle.astro';
+import KebabNav from '../components/KebabNav.astro';
 import atkinsonUrl from '../assets/fonts/AtkinsonHyperlegibleNext-VariableFont_wght.woff2?url';
 
 interface Props {
@@ -58,7 +59,7 @@ const nav = [...pageLinks, ...configLinks];
       })();
     </script>
   </head>
-  <body data-chrome={chrome}>
+  <body data-chrome={chrome} data-mobile-nav={config.mobileNav ?? 'kebab'}>
     <div class="app-frame">
       {
         chrome === 'frame' && (
@@ -77,6 +78,7 @@ const nav = [...pageLinks, ...configLinks];
             </span>
             <span class="float-chip float-chip--tr">
               <ThemeToggle />
+              <KebabNav nav={nav} />
             </span>
           </>
         )
@@ -97,6 +99,7 @@ const nav = [...pageLinks, ...configLinks];
               </nav>
               {count && <span class="chrome-count">{count}</span>}
               <ThemeToggle />
+              <KebabNav nav={nav} />
             </header>
           )
         }
@@ -114,6 +117,7 @@ const nav = [...pageLinks, ...configLinks];
               </nav>
               {count && <span class="chrome-count">{count}</span>}
               <ThemeToggle />
+              <KebabNav nav={nav} />
             </aside>
           )
         }

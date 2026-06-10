@@ -545,3 +545,73 @@ button.blog-navbar-item {
         padding: var(--space-6) var(--space-4) var(--space-8);
     }
 }
+
+/* --- Kebab menu (mobileNav: 'kebab') -------------------------------------
+   A ⋮ chip toggling a hard-edged dropdown of the chrome nav links.
+   Desktop always uses the inline links; on phones the kebab replaces
+   them when <body data-mobile-nav="kebab">. */
+.kebab {
+    position: relative;
+    display: none;
+}
+
+.kebab-btn {
+    font-family: var(--font-mono);
+    font-size: 1.3rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--text-primary);
+    background: transparent;
+    border: var(--border-width) solid var(--border-subtle);
+    padding: var(--space-1) var(--space-2);
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+}
+.kebab-btn:hover,
+.kebab-btn[aria-expanded="true"] {
+    border-color: var(--border);
+    background: var(--pop-subtle);
+}
+
+.kebab-menu {
+    position: absolute;
+    top: calc(100% + var(--space-2));
+    right: 0;
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    min-width: 16rem;
+    background: var(--canvas);
+    border: var(--border-width) solid var(--border);
+    box-shadow: var(--shadow-md);
+    padding: var(--space-1) 0;
+}
+.kebab-menu[hidden] { display: none; }
+
+.kebab-menu a {
+    font-family: var(--font-mono);
+    font-size: 1.2rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-mono);
+    color: var(--text-primary);
+    text-decoration: none;
+    padding: var(--space-2) var(--space-4);
+    white-space: nowrap;
+}
+.kebab-menu a + a { border-top: 1px solid var(--border-subtle); }
+.kebab-menu a:hover { background: var(--pop-subtle); }
+
+/* Frame chrome: the kebab chip matches the floating toggle chip. */
+.float-chip--tr .kebab-btn {
+    background: var(--canvas);
+    border: var(--border-width) solid var(--border);
+    box-shadow: var(--shadow-sm);
+    padding: var(--space-1) var(--space-3);
+}
+
+@media (max-width: 767px) {
+    [data-mobile-nav="kebab"] .chrome-nav { display: none; }
+    [data-mobile-nav="kebab"] .kebab { display: block; }
+}

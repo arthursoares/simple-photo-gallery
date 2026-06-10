@@ -1,0 +1,58 @@
+---
+/**
+ * Mobile kebab menu — replaces the inline chrome nav on phones when
+ * gallery.config mobileNav is 'kebab'. A ⋮ chip toggles a hard-edged
+ * dropdown with the same links. Hidden on desktop; visibility is gated
+ * by [data-mobile-nav="kebab"] on <body> (see shell.css).
+ */
+interface Props {
+  nav: { label: string; href: string; external: boolean }[];
+}
+
+const { nav } = Astro.props;
+---
+
+{
+  nav.length > 0 && (
+    <div class="kebab">
+      <button type="button" class="kebab-btn" aria-expanded="false" aria-controls="kebab-menu" aria-label="Menu">
+        ⋮
+      </button>
+      <nav class="kebab-menu" id="kebab-menu" hidden>
+        {nav.map((l) => (
+          <a href={l.href} target={l.external ? '_blank' : undefined} rel={l.external ? 'noopener' : undefined}>
+            {l.label}
+            {l.external && <span class="chrome-nav-ext">↗</span>}
+          </a>
+        ))}
+      </nav>
+    </div>
+  )
+}
+
+<script>
+  document.querySelectorAll<HTMLElement>('.kebab').forEach((root) => {
+    const btn = root.querySelector<HTMLButtonElement>('.kebab-btn')!;
+    const menu = root.querySelector<HTMLElement>('.kebab-menu')!;
+
+    const setOpen = (open: boolean) => {
+      menu.hidden = !open;
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    };
+
+    btn.addEventListener('click', () => setOpen(menu.hidden));
+    /* Links navigate anyway; closing keeps the back-button state clean. */
+    menu.addEventListener('click', (e) => {
+      if ((e.target as HTMLElement).closest('a')) setOpen(false);
+    });
+    document.addEventListener('click', (e) => {
+      if (!menu.hidden && !root.contains(e.target as Node)) setOpen(false);
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !menu.hidden) {
+        setOpen(false);
+        btn.focus();
+      }
+    });
+  });
+</script>

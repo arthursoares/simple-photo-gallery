@@ -48,6 +48,8 @@ src/pages/[slug].astro           album pages (gallery mode) + markdown entry pag
 src/pages/docs.astro             hand-written documentation page (.docs-prose styles)
 src/layouts/Shell.astro          html shell + chrome variants (header|rail|frame);
                                    menu = entry pages (nav:true) + config.nav links
+src/components/KebabNav.astro    mobile ⋮ dropdown (config.mobileNav: 'kebab'|'inline';
+                                   gated by [data-mobile-nav] on <body>, ≤767px only)
 src/components/
   GalleryIndex.astro             Grid ⇄ Viewer experience + all its JS (masonry,
                                    keyboard nav, IntersectionObserver, #slug deep links)

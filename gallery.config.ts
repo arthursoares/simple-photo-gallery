@@ -30,6 +30,14 @@ export default {
   chrome: 'header' as 'header' | 'rail' | 'frame',
 
   /**
+   * How the chrome menu renders on phones (≤767px):
+   *   'kebab'  — a ⋮ button toggling a dropdown (default; scales to many links)
+   *   'inline' — links stay in the bar and scroll horizontally if they overflow
+   * Desktop always shows the inline links.
+   */
+  mobileNav: 'kebab' as 'kebab' | 'inline',
+
+  /**
    * Extra links in the site chrome (all variants). Internal hrefs are
    * relative to the site root (base path is applied automatically);
    * absolute http(s) URLs open in a new tab.
