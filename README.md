@@ -43,6 +43,18 @@ npm run dev        # http://localhost:4321
 
 No photos yet? `npm run demo` generates placeholders (with EXIF) to play with.
 
+To add real photos without committing camera originals, use the ingest
+script — it resizes to a web-sane 2400px (EXIF preserved) and stubs the
+album metadata:
+
+```bash
+npm run album -- --title "Sicily: Palermo" --dir ~/photos/palermo
+```
+
+**Agent-operable**: `AGENTS.md` includes an "Operating a gallery" runbook,
+and `skills/publish-album/` ships a ready-made skill for agent assistants —
+"publish these 10 photos to my gallery" becomes one delegated task.
+
 ## Content model: folders are albums, files are photos
 
 ```

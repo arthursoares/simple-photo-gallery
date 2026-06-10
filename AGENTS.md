@@ -19,6 +19,7 @@ npm run dev       # dev server on :4321
 npm run build     # static build → dist/ (this is also the type gate)
 npm run preview   # serve dist/
 npm run demo      # generate placeholder photos WITH EXIF (refuses if content exists)
+npm run album -- --title "…" --dir <src>   # ingest photos (see Operating below)
 BASE_PATH=/repo/ npm run build   # simulate a GitHub Pages project path
 ```
 
@@ -86,6 +87,47 @@ src/styles/
   `.docs-prose` style by [slug].astro. Frontmatter: `title`, `description`,
   `mark`, `nav`/`navLabel`/`order`, `draft`. A page filename that matches an
   album folder collides → duplicate-path build error (intentional).
+
+## Operating a gallery (content tasks)
+
+Recipes for publishing content to a deployed gallery (this repo or any
+fork/scaffold). All content operations are plain files + git; the CI build
+is the validator (slug collisions, bad frontmatter, and broken `photos:`/
+`cover` references fail it loudly) and every publish is a revertable commit.
+
+**Add an album** (from a folder of source images):
+
+```bash
+npm install                          # once per clone
+npm run album -- --title "Sicily: Palermo" --dir ~/photos/palermo \
+    [--caption "…"] [--date 2026-05-01] [--slug palermo] [--max 2400] [--force]
+# → resizes to ≤2400px long edge PRESERVING EXIF, writes
+#   src/content/photos/<slug>/ + an index.md stub
+# then: edit the index.md (captions, cover, photos: order) if asked to
+```
+
+**Add loose single photos**: `npm run album -- --single --dir <folder>`,
+then optionally write a `<basename>.md` sidecar per photo (title, caption,
+alt, date, tags).
+
+**Add a standalone page**: write `src/content/pages/<name>.md`
+(title/description/mark/nav/navLabel/order/draft frontmatter + markdown body).
+
+**Unpublish** anything: set `draft: true` (album `index.md`, photo sidecar,
+or page) — or `git revert` the commit that added it.
+
+**Publish & verify** — the success ritual every task ends with:
+
+```bash
+git add -A && git commit -m "feat(album): palermo" && git push
+gh run watch --exit-status                 # Pages deploy; non-zero = build failed
+curl -sf -o /dev/null https://<user>.github.io/<repo>/<slug>/ && echo live
+```
+
+Report the live URL when done. Never commit originals straight off a camera —
+always go through `npm run album` (repo bloat; Pages has a ~1 GB site limit).
+EXIF must be preserved on any image processing: the build uses it for
+ordering, dates, and captions.
 
 ## Configuration semantics (gallery.config.ts)
 

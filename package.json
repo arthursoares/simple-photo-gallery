@@ -1,13 +1,14 @@
 {
   "name": "simple-photo-gallery",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "A fork-and-deploy photo gallery for Astro + GitHub Pages — Modern-TUI design, masonry grid, full-bleed viewer, EXIF-driven captions. Single-album or multi-album.",
   "type": "module",
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "demo": "node scripts/make-demo-photos.mjs"
+    "demo": "node scripts/make-demo-photos.mjs",
+    "album": "node scripts/add-album.mjs"
   },
   "dependencies": {
     "astro": "^5.8.0",
