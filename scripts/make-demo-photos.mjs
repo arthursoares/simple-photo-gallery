@@ -86,4 +86,38 @@ await photo('rooftop-fog.jpg', { w: 1600, h: 1067, label: 'FOG', palette: 5, dat
 await photo('night-window.jpg', { w: 1067, h: 1600, label: 'WINDOW', palette: 2, date: '2025:02:02 23:10:00', camera: CAM_B, iso: 1600, f: 1.8, t: '1/30', desc: 'Night window, long exposure handheld' });
 await photo('2025-03-08-red-bicycle.jpg', { w: 1200, h: 1600, label: 'BICYCLE', palette: 4 });
 
+/* Markdown examples — so the placeholders also demonstrate the metadata
+   layer (curated order, captions, writeup, sidecar). */
+await writeFile(
+  path.join(ROOT, '2025-04-lisbon/index.md'),
+  `---
+title: Lisbon
+date: 2025-04-13
+caption: Three days of hills, tiles, and hard light.
+cover: miradouro.jpg
+tags: [travel, city]
+photos:
+  - file: miradouro.jpg
+    caption: Golden hour from Miradouro da Graça
+  - file: tram-28.jpg
+    caption: Tram 28 climbing through Alfama
+  - file: alfama-steps.jpg
+---
+
+Three days in Lisbon in April — mostly walking, mostly uphill. The first
+three photos are curated via the \`photos:\` list in this file; the rest
+follow in EXIF shooting order automatically.
+`
+);
+await writeFile(
+  path.join(ROOT, 'rooftop-fog.md'),
+  `---
+title: Rooftop fog
+caption: Fog rolling over the rooftops at sunrise
+tags: [weather]
+---
+`
+);
+console.log('wrote markdown examples');
+
 console.log('done.');

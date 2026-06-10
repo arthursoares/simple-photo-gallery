@@ -13,7 +13,16 @@ with a lightbox, EXIF-driven captions, and build-time image optimization.
 | --- | --- | --- |
 | ![Grid](docs/chrome-header-grid.jpeg) | ![Viewer](docs/chrome-header-viewer.jpeg) | ![Album](docs/album-dark.jpeg) |
 
-## Deploy your own in three steps
+## Get a gallery
+
+The quickest path is the scaffolder — it asks a few questions, strips the
+demo content, and sets everything up in a fresh folder:
+
+```bash
+npm create simple-photo-gallery@latest my-photos
+```
+
+Or deploy by forking, in three steps:
 
 1. **Fork** (or "Use this template") this repository.
 2. In your fork: **Settings → Pages → Build and deployment → Source →
