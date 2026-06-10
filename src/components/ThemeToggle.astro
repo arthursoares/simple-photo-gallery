@@ -1,0 +1,16 @@
+---
+/* Light/dark toggle — instant state, persisted to localStorage. */
+---
+
+<button type="button" class="theme-toggle" aria-label="Toggle dark mode">◐</button>
+
+<script>
+  document.querySelectorAll('.theme-toggle').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const root = document.documentElement;
+      const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      root.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+    });
+  });
+</script>

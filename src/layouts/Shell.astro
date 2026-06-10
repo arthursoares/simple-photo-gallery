@@ -1,0 +1,98 @@
+---
+import config from '../../gallery.config';
+import '../styles/tokens.css';
+import '../styles/fonts.css';
+import '../styles/shell.css';
+import '../styles/gallery.css';
+import ThemeToggle from '../components/ThemeToggle.astro';
+
+interface Props {
+  title?: string;
+  description?: string;
+  /** Right-side counter text, e.g. "24 photos". */
+  count?: string;
+}
+
+const { title, description, count } = Astro.props;
+const pageTitle = title ? `${title} — ${config.title}` : config.title;
+const chrome = config.chrome;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description ?? config.description} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link
+      rel="preload"
+      href="/fonts/AtkinsonHyperlegibleNext-VariableFont_wght.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <script is:inline>
+      /* Theme init — runs before paint so there is no flash. */
+      (function () {
+        var saved = localStorage.getItem('theme');
+        var dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.setAttribute(
+          'data-theme',
+          saved === 'light' || saved === 'dark' ? saved : dark ? 'dark' : 'light'
+        );
+      })();
+    </script>
+  </head>
+  <body data-chrome={chrome}>
+    <div class="app-frame">
+      {
+        chrome === 'frame' && (
+          <>
+            <a class="float-chip chrome-title float-chip--tl" href="/">
+              <span class="chrome-mark">▧</span> {config.title}
+            </a>
+            <span class="float-chip float-chip--tr">
+              <ThemeToggle />
+            </span>
+          </>
+        )
+      }
+      <div class="site">
+        {
+          chrome === 'header' && (
+            <header class="topbar">
+              <a class="chrome-title" href="/">
+                <span class="chrome-mark">▧</span> {config.title}
+              </a>
+              {count && <span class="chrome-count">{count}</span>}
+              <ThemeToggle />
+            </header>
+          )
+        }
+        {
+          chrome === 'rail' && (
+            <aside class="rail">
+              <span class="chrome-mark" aria-hidden="true">▧</span>
+              <a class="rail-title" href="/">{config.title}</a>
+              {count && <span class="chrome-count">{count}</span>}
+              <ThemeToggle />
+            </aside>
+          )
+        }
+        <div class="site-content" tabindex="-1">
+          <slot />
+          <div class="content-end">
+            <span class="content-end-text">░▒▓ EOF ▓▒░</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+      // Keyboard scrolling works immediately without a click.
+      document.querySelector<HTMLElement>('.site-content')?.focus({ preventScroll: true });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,63 @@
+---
+/**
+ * Album page (gallery mode) — writeup + photo-essay feed + lightbox.
+ */
+import { render } from 'astro:content';
+import Shell from '../layouts/Shell.astro';
+import PhotoEssay from '../components/PhotoEssay.astro';
+import Lightbox from '../components/Lightbox.astro';
+import { getGallery, formatDate, type Album } from '../lib/photos';
+
+export async function getStaticPaths() {
+  const gallery = await getGallery();
+  if (gallery.mode !== 'gallery') return [];
+  return gallery.albums.map((album) => ({
+    params: { slug: album.slug },
+    props: { album },
+  }));
+}
+
+interface Props {
+  album: Album;
+}
+
+const { album } = Astro.props;
+const date = formatDate(album.date);
+const Writeup = album.entry ? (await render(album.entry)).Content : null;
+const excerpt = album.entry?.data.caption;
+---
+
+<Shell title={album.title} description={excerpt} count={`${album.photos.length} photos`}>
+  <main class="site-main">
+    <section class="w-pgh">
+      <div class="w-pgh-kick">
+        <a href="/">← gallery</a>
+        <span class="w-pgh-kick-sep">·</span>
+        <span class="w-pgh-kick-mark">▣</span>
+        Album
+        {
+          date && (
+            <>
+              <span class="w-pgh-kick-sep">·</span>
+              <span>{date}</span>
+            </>
+          )
+        }
+        <span class="w-pgh-kick-sep">·</span>
+        <span>{album.photos.length} photos</span>
+      </div>
+      <h1 class="w-pgh-title">{album.title}</h1>
+      {excerpt && <p class="w-pgh-excerpt">{excerpt}</p>}
+    </section>
+
+    {
+      Writeup && (
+        <div class="pe-writeup">
+          <Writeup />
+        </div>
+      )
+    }
+    <PhotoEssay photos={album.photos} />
+  </main>
+  <Lightbox />
+</Shell>

@@ -1,0 +1,78 @@
+---
+import { render } from 'astro:content';
+import config from '../../gallery.config';
+import Shell from '../layouts/Shell.astro';
+import GalleryIndex from '../components/GalleryIndex.astro';
+import PhotoEssay from '../components/PhotoEssay.astro';
+import Lightbox from '../components/Lightbox.astro';
+import { getGallery, formatDate, type GalleryItem } from '../lib/photos';
+
+const gallery = await getGallery();
+
+/* Single mode: the site IS one album. If the content folder only holds loose
+   photos, treat them as that album. */
+const single = gallery.mode === 'single';
+const album = single
+  ? (gallery.albums[0] ?? {
+      slug: 'photos',
+      title: config.title,
+      date: undefined,
+      cover: gallery.singles[0],
+      photos: gallery.singles,
+      tags: [],
+      entry: undefined,
+    })
+  : null;
+
+const items: GalleryItem[] = single
+  ? album!.photos.map((p) => ({ kind: 'photo' as const, slug: p.slug, date: p.date, photo: p }))
+  : gallery.items;
+
+const essay = single && config.presentation === 'essay';
+const photoCount = single
+  ? album!.photos.length
+  : gallery.singles.length + gallery.albums.reduce((n, a) => n + a.photos.length, 0);
+
+const title = single && album!.title !== config.title ? album!.title : config.title;
+const date = single ? formatDate(album!.date) : undefined;
+const Writeup = single && album!.entry ? (await render(album!.entry)).Content : null;
+---
+
+<Shell count={`${photoCount} photos`}>
+  <main class="site-main">
+    <section class="w-pgh">
+      <div class="w-pgh-kick">
+        <span class="w-pgh-kick-mark">▧</span>
+        {title}
+        {
+          date && (
+            <>
+              <span class="w-pgh-kick-sep">·</span>
+              <span>{date}</span>
+            </>
+          )
+        }
+        <span class="w-pgh-kick-sep">·</span>
+        <span>{photoCount} photos</span>
+      </div>
+      <h1 class="w-pgh-title">{title}</h1>
+      {config.description && <p class="w-pgh-excerpt">{config.description}</p>}
+    </section>
+
+    {
+      essay ? (
+        <>
+          {Writeup && (
+            <div class="pe-writeup">
+              <Writeup />
+            </div>
+          )}
+          <PhotoEssay photos={album!.photos} />
+        </>
+      ) : (
+        <GalleryIndex items={items} />
+      )
+    }
+  </main>
+  {essay && <Lightbox />}
+</Shell>

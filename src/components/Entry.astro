@@ -1,0 +1,71 @@
+---
+/**
+ * One large photo in the Viewer feed. Captioned image-frame; the page
+ * scrolls normally. data-slug is the anchor a grid thumbnail / deep-link
+ * resolves to. Albums get the stacked frame + "▣ Photo album" pill + a
+ * prominent "view album →"; singles get a quiet "full ↗" to the original.
+ */
+import { Image, getImage } from 'astro:assets';
+import config from '../../gallery.config';
+import { renderTemplate } from '../lib/caption';
+import { captionContext, photoExifLine, formatDate, type GalleryItem } from '../lib/photos';
+
+interface Props {
+  item: GalleryItem;
+}
+
+const { item } = Astro.props;
+const isAlbum = item.kind === 'album';
+const photo = item.photo;
+const title = isAlbum ? item.album.title : photo.title;
+const date = formatDate(item.date);
+const sub = isAlbum
+  ? `${item.album.photos.length} photos`
+  : renderTemplate(config.exifTemplate, captionContext(photo)) || photo.caption;
+const full = await getImage({ src: photo.image, width: Math.min(2000, photo.image.width) });
+---
+
+<article class="gv-entry" data-slug={item.slug} tabindex="-1">
+  <figure class:list={['gv-frame', { 'gv-frame--album': isAlbum }]}>
+    <Image
+      class="gv-img"
+      src={photo.image}
+      widths={[750, 1140, 1920]}
+      sizes="(min-width: 768px) min(1100px, 92vw), 94vw"
+      alt={photo.alt}
+      loading="lazy"
+    />
+    {
+      isAlbum && (
+        /* Pointer-only full-frame click target; the caption link is the
+           keyboard/SR target. */
+        <a class="gv-img-link" href={`/${item.slug}/`} tabindex="-1" aria-hidden="true" />
+      )
+    }
+    <figcaption class="gv-bar">
+      <span class="gv-cap">
+        {isAlbum && <span class="gv-cap-mark" title="Photo album — many images on its page">▣&nbsp;Photo album</span>}
+        <b class="gv-cap-title">{title}</b>
+        {date && <span class="gv-cap-date">· {date}</span>}
+        {sub && <span class="gv-cap-sub">· {sub}</span>}
+      </span>
+      {
+        isAlbum ? (
+          <a class="gv-act" href={`/${item.slug}/`}>
+            view album <span class="gv-act-ar">→</span>
+          </a>
+        ) : (
+          <a
+            class="gv-act gv-act--quiet"
+            href={full.src}
+            target="_blank"
+            rel="noopener"
+            aria-label={`Open full-size image of ${title}`}
+          >
+            full <span class="gv-act-ar">↗</span>
+          </a>
+        )
+      }
+    </figcaption>
+  </figure>
+</article>

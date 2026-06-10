@@ -1,0 +1,19 @@
+{
+  "name": "artsoares-photo-gallery",
+  "version": "0.1.0",
+  "description": "A Modern-TUI photo gallery theme for Astro — masonry grid, full-bleed viewer, EXIF-driven captions. Single-album or multi-album.",
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "demo": "node scripts/make-demo-photos.mjs"
+  },
+  "dependencies": {
+    "astro": "^5.8.0",
+    "exifr": "^7.1.3"
+  },
+  "devDependencies": {
+    "sharp": "^0.33.0"
+  }
+}

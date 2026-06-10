@@ -1,0 +1,48 @@
+---
+/**
+ * Photo-essay feed — large framed photos in normal flow (album pages and
+ * single-mode 'essay' presentation). Clicking a photo opens the lightbox
+ * at its full-size rendition.
+ */
+import { Image, getImage } from 'astro:assets';
+import { photoCaption, photoExifLine, type Photo } from '../lib/photos';
+
+interface Props {
+  photos: Photo[];
+}
+
+const { photos } = Astro.props;
+const frames = await Promise.all(
+  photos.map(async (photo) => ({
+    photo,
+    caption: photoCaption(photo) || photo.title,
+    exifLine: photoExifLine(photo),
+    full: await getImage({ src: photo.image, width: Math.min(2000, photo.image.width) }),
+  }))
+);
+---
+
+<div class="pe-feed">
+  {
+    frames.map(({ photo, caption, exifLine, full }, i) => (
+      <figure class="pe-figure gv-frame">
+        <Image
+          class="gv-img gx-zoomable"
+          src={photo.image}
+          widths={[750, 1140, 1920]}
+          sizes="(min-width: 768px) min(1100px, 92vw), 94vw"
+          alt={photo.alt}
+          loading={i < 2 ? 'eager' : 'lazy'}
+          data-gx-full={full.src}
+          data-gx-cap={caption}
+        />
+        <figcaption class="gv-bar">
+          <span class="gv-cap">
+            <b class="gv-cap-title">{caption}</b>
+            {exifLine && <span class="gv-cap-sub">· {exifLine}</span>}
+          </span>
+        </figcaption>
+      </figure>
+    ))
+  }
+</div>

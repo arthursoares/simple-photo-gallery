@@ -1,0 +1,319 @@
+---
+/**
+ * The Grid ⇄ Viewer experience: view selector, masonry grid, single-column
+ * feed, status chip, keyboard nav, and #slug deep-links. A direct port of
+ * the Ghost theme's /gallery/ page.
+ */
+import Thumb from './Thumb.astro';
+import Entry from './Entry.astro';
+import type { GalleryItem } from '../lib/photos';
+
+interface Props {
+  items: GalleryItem[];
+}
+
+const { items } = Astro.props;
+const albumCount = items.filter((i) => i.kind === 'album').length;
+const photoCount = items.length - albumCount;
+const countLabel = albumCount
+  ? `${photoCount} photos · ${albumCount} albums`
+  : `${photoCount} photos`;
+---
+
+{
+  items.length === 0 ? (
+    <div class="gv-empty">
+      <p class="gv-empty-text">No photos yet.</p>
+    </div>
+  ) : (
+    <>
+      <nav class="w-filter gv-viewbar" aria-label="Gallery view mode">
+        <span class="w-filter-lbl">View ░</span>
+        <div class="blog-navbar">
+          <button type="button" class="blog-navbar-item gv-view-btn is-active" data-view="grid" aria-pressed="true">
+            ▦ Grid
+          </button>
+          <button type="button" class="blog-navbar-item gv-view-btn" data-view="viewer" aria-pressed="false">
+            ❑ Viewer
+          </button>
+        </div>
+        <span class="w-filter-count">{countLabel}</span>
+      </nav>
+
+      <div class="gv-modes" data-mode="grid">
+        <div class="gv-grid">
+          {items.map((item, i) => (
+            <Thumb item={item} index={i} />
+          ))}
+        </div>
+
+        <div class="gv-feed">
+          {items.map((item) => (
+            <Entry item={item} />
+          ))}
+        </div>
+
+        <div class="gv-status">
+          <span class="gv-status-hint">↑↓ navigate · esc grid</span>
+          <span class="gv-status-sep">·</span>
+          <span class="gv-status-count" role="status" aria-live="polite">
+            <b class="gv-cur">1</b> / <span class="gv-total">0</span>
+          </span>
+        </div>
+      </div>
+    </>
+  )
+}
+
+<script>
+  const modes = document.querySelector<HTMLElement>('.gv-modes');
+  if (modes) initGallery(modes);
+
+  function initGallery(modes: HTMLElement) {
+    const feed = modes.querySelector<HTMLElement>('.gv-feed')!;
+    const viewBtns = [...document.querySelectorAll<HTMLButtonElement>('.gv-view-btn')];
+    const thumbs = [...modes.querySelectorAll<HTMLAnchorElement>('.gv-thumb')];
+    const entries = [...modes.querySelectorAll<HTMLElement>('.gv-entry')];
+    const curEl = modes.querySelector('.gv-cur');
+    const totEl = modes.querySelector('.gv-total');
+    let active = 0;
+    let lastIdx = -1;
+    let programmatic = false;
+    let progTimer: ReturnType<typeof setTimeout> | null = null;
+    const motionOK = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (totEl) totEl.textContent = String(entries.length);
+
+    /* Row-first masonry: the grid flows left→right (CSS), and here we set each
+       thumb's row span from its measured height so items still pack vertically.
+       Re-runs on image load, resize, and whenever the Grid view is (re)shown
+       (it can't measure while hidden in Viewer mode). */
+    const grid = modes.querySelector<HTMLElement>('.gv-grid');
+    function layoutMasonry() {
+      if (!grid || modes.getAttribute('data-mode') !== 'grid') return;
+      const cs = getComputedStyle(grid);
+      const rowH = parseFloat(cs.gridAutoRows) || 1;
+      const gap = parseFloat(cs.columnGap) || 16;
+      thumbs.forEach((t) => {
+        const img = t.querySelector<HTMLImageElement>('.gv-thumb-img');
+        /* Keep the CSS placeholder span until the image has real dimensions —
+           skip lazy/undecoded/broken images so they don't collapse to a
+           border-only sliver on the first pass. */
+        if (img && (!img.complete || !img.naturalHeight)) return;
+        const h = t.getBoundingClientRect().height;
+        if (h) t.style.gridRowEnd = 'span ' + Math.max(1, Math.ceil((h + gap) / rowH));
+      });
+    }
+    /* Coalesce bursts of relayout() into a single rAF so startup stays O(n). */
+    let rafId = 0;
+    function relayout() {
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(layoutMasonry);
+    }
+    thumbs.forEach((t) => {
+      const img = t.querySelector<HTMLImageElement>('.gv-thumb-img');
+      if (!img) return;
+      if (img.complete && img.naturalHeight) relayout();
+      else {
+        img.addEventListener('load', relayout);
+        img.addEventListener('error', relayout);
+      }
+    });
+    let rzTimer: ReturnType<typeof setTimeout>;
+    window.addEventListener('resize', () => {
+      clearTimeout(rzTimer);
+      rzTimer = setTimeout(layoutMasonry, 120);
+    });
+    relayout();
+
+    /* Resolve a photo by slug, scoped to the feed. */
+    const entryBySlug = (slug: string) =>
+      slug ? feed.querySelector<HTMLElement>(`[data-slug="${CSS.escape(slug)}"]`) : null;
+
+    /* Update counter + reflect the current photo's slug in the URL
+       (replaceState — no scroll jump, no history spam). */
+    function reflect(i: number) {
+      if (i === lastIdx) return;
+      lastIdx = i;
+      active = i;
+      if (curEl) curEl.textContent = String(i + 1);
+      const slug = entries[i]?.getAttribute('data-slug');
+      if (slug) history.replaceState(null, '', '#' + slug);
+    }
+
+    function setMode(mode: string) {
+      modes.setAttribute('data-mode', mode);
+      viewBtns.forEach((b) => {
+        const on = b.getAttribute('data-view') === mode;
+        b.classList.toggle('is-active', on);
+        b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+      if (mode === 'grid') {
+        lastIdx = -1;
+        history.replaceState(null, '', location.pathname + location.search);
+        relayout();
+      }
+    }
+
+    function markProgrammatic() {
+      programmatic = true;
+      if (progTimer) clearTimeout(progTimer);
+      progTimer = setTimeout(() => (programmatic = false), 500);
+    }
+
+    const scrollToEntry = (el: HTMLElement | undefined, behavior?: ScrollBehavior) =>
+      el?.scrollIntoView({ behavior: behavior || 'auto', block: 'center' });
+
+    function focusActive() {
+      const el = entries[active];
+      if (!el) return;
+      try {
+        el.focus({ preventScroll: true });
+      } catch {
+        el.focus();
+      }
+    }
+
+    function goTo(i: number) {
+      if (!entries.length) return;
+      i = Math.max(0, Math.min(i, entries.length - 1));
+      markProgrammatic();
+      scrollToEntry(entries[i], motionOK ? 'smooth' : 'auto');
+      reflect(i);
+    }
+
+    /* One-shot nearest-by-geometry — used only when entering Viewer. */
+    function nearestByRect() {
+      const mid = window.innerHeight / 2;
+      let best = 0;
+      let bestDist = Infinity;
+      entries.forEach((entry, i) => {
+        const r = entry.getBoundingClientRect();
+        const d = Math.abs(r.top + r.height / 2 - mid);
+        if (d < bestDist) {
+          bestDist = d;
+          best = i;
+        }
+      });
+      return best;
+    }
+
+    /* IntersectionObserver tracks the most-visible photo while free-scrolling. */
+    const ratios = entries.map(() => 0);
+    if ('IntersectionObserver' in window && entries.length) {
+      const io = new IntersectionObserver(
+        (ents) => {
+          ents.forEach((e) => {
+            const idx = entries.indexOf(e.target as HTMLElement);
+            if (idx >= 0) ratios[idx] = e.intersectionRatio;
+          });
+          if (programmatic || modes.getAttribute('data-mode') !== 'viewer') return;
+          let best = 0;
+          let bestR = -1;
+          ratios.forEach((r, i) => {
+            if (r > bestR) {
+              bestR = r;
+              best = i;
+            }
+          });
+          /* Nothing actually visible (e.g. scrolled into the EOF past the last
+             photo) — keep the last active rather than snapping to photo 1. */
+          if (bestR <= 0) return;
+          reflect(best);
+        },
+        { threshold: [0, 0.25, 0.5, 0.75, 1] }
+      );
+      entries.forEach((e) => io.observe(e));
+    }
+
+    function enterViewer(targetIdx?: number) {
+      setMode('viewer');
+      const i = typeof targetIdx === 'number' ? targetIdx : nearestByRect();
+      markProgrammatic();
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (entries[i]) {
+            scrollToEntry(entries[i], 'auto');
+            active = i;
+            focusActive();
+          }
+          reflect(i);
+        });
+      });
+    }
+
+    viewBtns.forEach((b) => {
+      b.addEventListener('click', () => {
+        if (b.getAttribute('data-view') === 'viewer') enterViewer();
+        else setMode('grid');
+      });
+    });
+
+    thumbs.forEach((t) => {
+      t.addEventListener('click', (e) => {
+        /* Album thumbnails are real links to the album page — let them
+           navigate. Single photos open the in-place Viewer instead. */
+        if (t.classList.contains('gv-thumb--album')) return;
+        e.preventDefault();
+        const target = entryBySlug(t.getAttribute('data-slug') || '');
+        enterViewer(target ? entries.indexOf(target) : 0);
+      });
+    });
+
+    /* Keyboard navigation — only in Viewer mode; jumps photo-to-photo. */
+    document.addEventListener('keydown', (e) => {
+      if (modes.getAttribute('data-mode') !== 'viewer') return;
+      const el = e.target as HTMLElement;
+      if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable) return;
+      switch (e.key) {
+        case 'ArrowDown':
+        case 'ArrowRight':
+        case 'j':
+          e.preventDefault();
+          goTo(active + 1);
+          focusActive();
+          break;
+        case 'ArrowUp':
+        case 'ArrowLeft':
+        case 'k':
+          e.preventDefault();
+          goTo(active - 1);
+          focusActive();
+          break;
+        case 'Home':
+          e.preventDefault();
+          goTo(0);
+          focusActive();
+          break;
+        case 'End':
+          e.preventDefault();
+          goTo(entries.length - 1);
+          focusActive();
+          break;
+        case 'Escape': {
+          e.preventDefault();
+          const backThumb = thumbs[active];
+          setMode('grid');
+          if (backThumb) {
+            try {
+              backThumb.focus();
+            } catch {}
+          }
+          break;
+        }
+        case 'Enter': {
+          if (el.closest && el.closest('a, button')) return;
+          e.preventDefault();
+          const link = entries[active]?.querySelector<HTMLAnchorElement>('.gv-act');
+          if (link) link.click();
+          break;
+        }
+      }
+    });
+
+    /* Deep-link: /#<slug> opens the Viewer at that photo. */
+    const slug = (location.hash || '').replace(/^#/, '');
+    const target = entryBySlug(slug);
+    if (target) enterViewer(entries.indexOf(target));
+  }
+</script>

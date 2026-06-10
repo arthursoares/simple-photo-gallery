@@ -1,0 +1,171 @@
+/* ============================================================
+   DESIGN TOKENS — Modern TUI Design System
+   Hard edges, solid shadows, type carries, instant state.
+   ============================================================ */
+:root {
+    /* Canvas */
+    --canvas: #f6f5f2;
+    --canvas-raised: #edecea;
+    --canvas-inset: #e8e7e4;
+
+    /* Text */
+    --text-primary: #1c1b18;
+    --text-secondary: #6b6860;
+    --text-tertiary: #9e9b93;
+    --text-inverse: #f6f5f2;
+
+    /* Accent */
+    --accent: #262b7d;
+    --accent-hover: #1e2266;
+    --accent-subtle: rgba(38, 43, 125, 0.08);
+
+    /* Pop */
+    --pop: #e8a217;
+    --pop-light: #fdf0d0;
+    --pop-subtle: rgba(232, 162, 23, 0.12);
+
+    /* Borders */
+    --border: #1c1b18;
+    --border-subtle: rgba(28, 27, 24, 0.18);
+    --border-width: 2px;
+    --border-width-heavy: 3px;
+
+    /* Shadows — hard offset, 0px blur, always down-right */
+    --shadow-sm: 3px 3px 0px rgba(28, 27, 24, 0.18);
+    --shadow-md: 5px 5px 0px rgba(28, 27, 24, 0.20);
+    --shadow-lg: 8px 8px 0px rgba(28, 27, 24, 0.22);
+    --shadow-accent: 5px 5px 0px rgba(38, 43, 125, 0.30);
+    --shadow-pop: 5px 5px 0px rgba(232, 162, 23, 0.35);
+
+    /* Spacing — 4px base grid */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-8: 32px;
+    --space-10: 40px;
+    --space-12: 48px;
+    --space-16: 64px;
+    --space-20: 80px;
+
+    /* Typography */
+    --font-base: 'Atkinson Hyperlegible Next', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'Divenire Mono', ui-monospace, 'SF Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    --base-text-size: 1.6rem;
+    --tracking-tight: -0.02em;
+    --tracking-wide: 0.06em;
+    --tracking-mono: 0.06em;
+
+    /* Layout */
+    --rail-width: 6rem;
+    --topbar-height: 4.8rem;
+}
+
+/* ============================================================
+   DARK MODE — warm near-black, never cool gray or blue-black
+   ============================================================ */
+:root,
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"] { color-scheme: dark; }
+
+:root[data-theme="dark"] {
+    --canvas: #1a1918;
+    --canvas-raised: #242320;
+    --canvas-inset: #131210;
+
+    --text-primary: #e8e6e1;
+    --text-secondary: #9a9790;
+    --text-tertiary: #5e5b55;
+    --text-inverse: #1a1918;
+
+    --accent: #7b82d4;
+    --accent-hover: #9198e0;
+    --accent-subtle: rgba(123, 130, 212, 0.12);
+
+    --pop: #e8a217;
+    --pop-light: rgba(232, 162, 23, 0.15);
+    --pop-subtle: rgba(232, 162, 23, 0.08);
+
+    --border: #3e3c38;
+    --border-subtle: rgba(232, 230, 225, 0.08);
+
+    --shadow-sm: 3px 3px 0px rgba(0, 0, 0, 0.40);
+    --shadow-md: 5px 5px 0px rgba(0, 0, 0, 0.50);
+    --shadow-lg: 8px 8px 0px rgba(0, 0, 0, 0.55);
+    --shadow-accent: 5px 5px 0px rgba(123, 130, 212, 0.30);
+    --shadow-pop: 5px 5px 0px rgba(232, 162, 23, 0.30);
+}
+
+/* ============================================================
+   BASE
+   ============================================================ */
+html {
+    box-sizing: border-box;
+    font-size: 62.5%;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: auto;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: inherit;
+}
+
+body {
+    margin: 0;
+    color: var(--text-primary);
+    font-family: var(--font-base);
+    font-size: var(--base-text-size);
+    line-height: 1.5;
+    text-rendering: optimizeLegibility;
+    font-kerning: normal;
+    font-optical-sizing: auto;
+    background-color: var(--canvas-inset);
+    text-wrap: pretty;
+    hyphens: auto;
+    -webkit-hyphens: auto;
+}
+
+::selection {
+    background: var(--pop);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] ::selection {
+    background: var(--pop);
+    color: var(--text-inverse);
+}
+
+a {
+    color: var(--text-primary);
+    text-decoration: none;
+    cursor: pointer;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    margin: 0;
+    color: var(--text-primary);
+    font-family: var(--font-base);
+    line-height: 1.15;
+    font-weight: 700;
+    text-wrap: balance;
+    hyphens: none;
+    font-variant-numeric: lining-nums;
+}
+
+p { margin: 0; }
+
+img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
+
+figure {
+    margin-right: 0;
+    margin-left: 0;
+}

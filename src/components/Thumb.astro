@@ -1,0 +1,38 @@
+---
+/**
+ * One masonry thumbnail for the Grid view. Single photos switch to the
+ * Viewer in place (href="#slug"); albums are real links to their page.
+ */
+import { Image } from 'astro:assets';
+import { photoCaption, type GalleryItem } from '../lib/photos';
+
+interface Props {
+  item: GalleryItem;
+  index: number;
+}
+
+const { item, index } = Astro.props;
+const isAlbum = item.kind === 'album';
+const photo = item.photo;
+const caption = photoCaption(photo) || photo.title;
+const label = isAlbum ? item.album.title : caption;
+---
+
+<a
+  class:list={['gv-thumb', { 'gv-thumb--album': isAlbum }]}
+  href={isAlbum ? `/${item.slug}/` : `#${item.slug}`}
+  data-slug={item.slug}
+  aria-label={isAlbum ? `Open photo album: ${label}` : `View ${label}`}
+>
+  <Image
+    class="gv-thumb-img"
+    src={photo.image}
+    widths={[200, 400, 750]}
+    sizes="(min-width: 768px) 280px, 50vw"
+    alt={photo.alt}
+    loading={index === 0 ? 'eager' : 'lazy'}
+    fetchpriority={index === 0 ? 'high' : undefined}
+  />
+  {isAlbum && <span class="gv-thumb-album-pill" aria-hidden="true">▣&nbsp;Album</span>}
+  <span class="gv-thumb-cap">{label}</span>
+</a>

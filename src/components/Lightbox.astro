@@ -1,0 +1,205 @@
+---
+/**
+ * Full-screen Modern-TUI photo overlay — framed photo + caption bar +
+ * status chip + keyboard nav. No zoom/pan. Opens from any `.gx-zoomable`
+ * image; prefers its `data-gx-full` rendition and `data-gx-cap` caption.
+ */
+---
+
+<div class="gx" data-open="false" role="dialog" aria-modal="true" aria-label="Photo viewer" tabindex="-1" hidden>
+  <div class="gx-backdrop" data-gx-close aria-hidden="true"></div>
+
+  <figure class="gx-frame">
+    <img class="gx-img" alt="" src="" />
+    <figcaption class="gx-bar">
+      <span class="gx-cap"><b class="gx-cap-title"></b></span>
+      <button type="button" class="gx-close" data-gx-close aria-label="Close (Esc)">✕&nbsp;close</button>
+    </figcaption>
+  </figure>
+
+  <div class="gx-status" role="status" aria-live="polite">
+    <span class="gx-status-hint">↑↓ navigate · esc close</span>
+    <span class="gx-status-sep">·</span>
+    <span class="gx-status-count"><b class="gx-cur">1</b> / <span class="gx-total">0</span></span>
+  </div>
+</div>
+
+<script>
+  const GX_TRIGGER_SEL = '.gx-zoomable';
+
+  const root = document.querySelector<HTMLElement>('.gx');
+  if (root) createGalleryOverlay(root);
+
+  function createGalleryOverlay(root: HTMLElement) {
+    const imgEl = root.querySelector<HTMLImageElement>('.gx-img')!;
+    const capEl = root.querySelector<HTMLElement>('.gx-cap')!;
+    const capTitle = root.querySelector<HTMLElement>('.gx-cap-title')!;
+    const curEl = root.querySelector('.gx-cur')!;
+    const totEl = root.querySelector('.gx-total')!;
+    const scroller = document.querySelector<HTMLElement>('.site-content');
+
+    type Item = { src: string; cap: string; el: HTMLImageElement };
+    let items: Item[] = [];
+    let index = 0;
+    let lastFocus: Element | null = null;
+
+    function captionFor(image: HTMLImageElement) {
+      const explicit = image.dataset.gxCap || image.getAttribute('alt');
+      if (explicit && explicit.trim()) return explicit.trim();
+      const cap = image.closest('figure')?.querySelector('figcaption');
+      return cap ? cap.textContent!.trim() : '';
+    }
+
+    /* Build the navigable set fresh from the live DOM. */
+    const collect = (): Item[] =>
+      [...document.querySelectorAll<HTMLImageElement>(GX_TRIGGER_SEL)].map((image) => ({
+        /* Prefer the full-size rendition over the responsive currentSrc. */
+        src: image.dataset.gxFull || image.getAttribute('src')!,
+        cap: captionFor(image),
+        el: image,
+      }));
+
+    function render() {
+      const it = items[index];
+      if (!it) return;
+      imgEl.src = it.src;
+      imgEl.alt = it.cap;
+      capTitle.textContent = it.cap;
+      capEl.style.visibility = it.cap ? '' : 'hidden';
+      curEl.textContent = String(index + 1);
+      totEl.textContent = String(items.length);
+    }
+
+    function open(trigger: HTMLImageElement) {
+      items = collect();
+      if (!items.length) return;
+      const i = items.findIndex((it) => it.el === trigger);
+      index = i < 0 ? 0 : i;
+      lastFocus = document.activeElement;
+      render();
+      root.hidden = false;
+      root.setAttribute('data-open', 'true');
+      if (scroller) scroller.style.overflow = 'hidden';
+      /* Move focus into the dialog itself (tabindex=-1) rather than onto the
+         close button — keeps keyboard/SR context here without painting a
+         focus ring on a control. */
+      try {
+        root.focus({ preventScroll: true });
+      } catch {
+        root.focus();
+      }
+    }
+
+    function close() {
+      root.setAttribute('data-open', 'false');
+      root.hidden = true;
+      if (scroller) scroller.style.overflow = '';
+      if (lastFocus instanceof HTMLElement) {
+        try {
+          lastFocus.focus();
+        } catch {}
+      }
+    }
+
+    function go(delta: number) {
+      const next = Math.max(0, Math.min(index + delta, items.length - 1));
+      if (next === index) return;
+      index = next;
+      render();
+    }
+
+    root.querySelectorAll('[data-gx-close]').forEach((el) => el.addEventListener('click', close));
+
+    /* Touch swipe (left/right) navigates photo-to-photo — there are no
+       on-screen arrows, so this is the only nav affordance on touch. */
+    let touchX = 0;
+    let touchY = 0;
+    root.addEventListener(
+      'touchstart',
+      (e) => {
+        const t = e.changedTouches[0];
+        touchX = t.clientX;
+        touchY = t.clientY;
+      },
+      { passive: true }
+    );
+    root.addEventListener(
+      'touchend',
+      (e) => {
+        const t = e.changedTouches[0];
+        const dx = t.clientX - touchX;
+        const dy = t.clientY - touchY;
+        if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) go(dx < 0 ? 1 : -1);
+      },
+      { passive: true }
+    );
+
+    document.addEventListener('keydown', (e) => {
+      if (root.getAttribute('data-open') !== 'true') return;
+      switch (e.key) {
+        case 'ArrowRight':
+        case 'ArrowDown':
+        case 'j':
+          e.preventDefault();
+          go(1);
+          break;
+        case 'ArrowLeft':
+        case 'ArrowUp':
+        case 'k':
+          e.preventDefault();
+          go(-1);
+          break;
+        case 'Home':
+          e.preventDefault();
+          index = 0;
+          render();
+          break;
+        case 'End':
+          e.preventDefault();
+          index = items.length - 1;
+          render();
+          break;
+        case 'Escape':
+          e.preventDefault();
+          close();
+          break;
+        case 'Tab': {
+          /* aria-modal hides the background from SRs but not from the
+             keyboard — wrap Tab inside the dialog. */
+          const focusables = root.querySelectorAll<HTMLElement>(
+            'button, [href], [tabindex]:not([tabindex="-1"])'
+          );
+          if (!focusables.length) {
+            e.preventDefault();
+            break;
+          }
+          const first = focusables[0];
+          const last = focusables[focusables.length - 1];
+          if (!root.contains(document.activeElement) || document.activeElement === root) {
+            e.preventDefault();
+            first.focus();
+          } else if (e.shiftKey && document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          } else if (!e.shiftKey && document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
+          break;
+        }
+      }
+    });
+
+    document.addEventListener(
+      'click',
+      (e) => {
+        const trigger = (e.target as HTMLElement).closest?.(GX_TRIGGER_SEL);
+        if (!trigger) return;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        open(trigger as HTMLImageElement);
+      },
+      true
+    );
+  }
+</script>
