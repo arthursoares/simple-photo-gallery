@@ -148,6 +148,9 @@ export default {
   presentation: 'grid',      // single mode: 'grid' (Grid ⇄ Viewer) | 'essay'
   chrome: 'header',          // 'header' | 'rail' | 'frame' (see below)
   mobileNav: 'kebab',        // phone menu: 'kebab' (⋮ dropdown) | 'inline' (scrolling links)
+  nav: [                     // manual menu links; markdown entry pages with
+    { label: 'github', href: 'https://…' },   // nav: true are listed before these
+  ],
 
   // Captions are assembled from templates. Tokens: {title} {caption} {date}
   // {camera} {lens} {focal} {aperture} {shutter} {iso} {keywords}.
@@ -214,7 +217,9 @@ widths/quality and push — the workflow rebuilds everything.
   `src/assets/fonts/` + `@font-face` rules in `src/styles/fonts.css`.
 - Working with an AI coding agent? **`AGENTS.md`** documents the
   architecture, configuration semantics, gotchas, and extension recipes
-  (new chrome variants, caption tokens, tag pages, extra pages).
+  (new chrome variants, caption tokens, tag pages, extra pages). For
+  *operating* a gallery (publishing albums, curating, customizing) install
+  **`skills/photo-gallery/`** into your agent assistant.
 
 ## License
 
