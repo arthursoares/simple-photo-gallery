@@ -90,6 +90,9 @@ src/styles/
 
 ## Operating a gallery (content tasks)
 
+> Packaged version of this runbook for agent assistants:
+> `skills/photo-gallery/` (SKILL.md + operations/setup/customize references).
+
 Recipes for publishing content to a deployed gallery (this repo or any
 fork/scaffold). All content operations are plain files + git; the CI build
 is the validator (slug collisions, bad frontmatter, and broken `photos:`/

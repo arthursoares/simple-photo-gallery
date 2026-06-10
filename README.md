@@ -52,8 +52,11 @@ npm run album -- --title "Sicily: Palermo" --dir ~/photos/palermo
 ```
 
 **Agent-operable**: `AGENTS.md` includes an "Operating a gallery" runbook,
-and `skills/publish-album/` ships a ready-made skill for agent assistants —
-"publish these 10 photos to my gallery" becomes one delegated task.
+and `skills/photo-gallery/` ships a ready-made skill for agent assistants
+(Claude Code, OpenClaw, …) covering the full lifecycle — set up a site from
+nothing (including enabling Pages), add albums or photos, curate captions
+and covers, customize the look — so "publish these 10 photos to my gallery"
+becomes one delegated task.
 
 ## Content model: folders are albums, files are photos
 
