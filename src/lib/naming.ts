@@ -38,12 +38,20 @@ export function parsePrefix(base: string): number | null {
 /**
  * Date encoded in a filename ('2025-04-13-lisbon' → that day). Anchored at
  * UTC noon so the rendered day is the same in every timezone.
+ *
+ * Rejects impossible days: JS silently rolls '2025-02-31' over to March 3rd,
+ * which would quietly reorder an album, so the parsed date has to round-trip
+ * back to the digits it came from.
  */
 export function parseFileDate(base: string): Date | undefined {
   const m = base.match(FILE_DATE);
   if (!m) return undefined;
+  const [year, month, day] = [Number(m[1]), Number(m[2]), Number(m[3])];
   const d = new Date(`${m[1]}-${m[2]}-${m[3]}T12:00:00Z`);
-  return isNaN(d.getTime()) ? undefined : d;
+  if (isNaN(d.getTime())) return undefined;
+  const roundTrips =
+    d.getUTCFullYear() === year && d.getUTCMonth() + 1 === month && d.getUTCDate() === day;
+  return roundTrips ? d : undefined;
 }
 
 /** 'stripped-file-name' → 'Stripped file name'. */
@@ -159,6 +167,48 @@ export function createRefResolver<T extends RefTarget>(photos: T[], albumDir: st
         `album (filenames are case-sensitive).\nPhotos found: ${available || '(none)'}`
     );
   };
+}
+
+/**
+ * Which route names are already taken by files in src/pages/.
+ *
+ * Only files that occupy a single top-level segment count: `docs.astro` and
+ * `docs/index.astro` both serve `/docs/`, but `legal/privacy.astro` serves
+ * `/legal/privacy/` and leaves `/legal/` free for an album. Reserving the
+ * first segment of every nested page would block valid site structure.
+ */
+export function reservedRouteNames(pageFiles: string[], pagesDir = '/src/pages/'): Set<string> {
+  const names = new Set<string>();
+  for (const key of pageFiles) {
+    const route = key.slice(pagesDir.length).replace(/\.(astro|md|mdx|html)$/, '');
+    const parts = route.split('/');
+    const name =
+      parts.length === 1 ? parts[0]! : parts.length === 2 && parts[1] === 'index' ? parts[0]! : null;
+    if (name && name !== 'index' && !name.includes('[')) names.add(name);
+  }
+  return names;
+}
+
+/**
+ * Site-wide photo slugs must be unique: they are the Viewer's `data-slug`, the
+ * entry's DOM id and the `/#slug` deep link. slugify() is lossy in both
+ * directions — 'a b.jpg' and 'a-b.jpg' collide, and so do 'sub/shot.jpg' and
+ * 'sub-shot.jpg' — so a collision has to be reported rather than shipped as a
+ * duplicate id that silently deep-links to the wrong photo.
+ */
+export function assertUniqueSlugs(photos: { slug: string; albumRel: string }[]): void {
+  const bySlug = new Map<string, string>();
+  for (const p of photos) {
+    const first = bySlug.get(p.slug);
+    if (first !== undefined) {
+      throw new Error(
+        `Photo slug collision: "${first}" and "${p.albumRel}" both resolve to the URL ` +
+          `fragment "${p.slug}". Slugs are ASCII-lowercase with every other character ` +
+          `folded to "-", so these names are indistinguishable — rename one of them.`
+      );
+    }
+    bySlug.set(p.slug, p.albumRel);
+  }
 }
 
 /** Newest first, undated last, ties broken by slug — the gallery index order. */

@@ -26,6 +26,7 @@ import exifr from 'exifr';
 import config from '../../gallery.config';
 import { renderTemplate } from './caption';
 import {
+  assertUniqueSlugs,
   autoCompare,
   compareNewestFirst,
   createRefResolver,
@@ -121,23 +122,44 @@ function asKeywords(...sources: unknown[]): string[] {
   return [...out];
 }
 
+/**
+ * Pick a photo's date, keeping it independent of the build machine's timezone.
+ *
+ * The two metadata sources need opposite treatment, so they are read from
+ * separate segments rather than exifr's merged output:
+ *   - EXIF DateTimeOriginal/CreateDate carry NO zone (they are the camera's
+ *     wall clock). exifr materialises them in the build machine's zone, so
+ *     they are re-anchored to the same wall-clock time in UTC.
+ *   - An XMP date may carry a real offset. Re-anchoring one would throw the
+ *     instant away and shift the printed day — so it is used as parsed.
+ * Guard against Invalid Date throughout: malformed metadata would otherwise
+ * blow up Intl.DateTimeFormat at render time.
+ */
+async function readExifDate(fsPath: string): Promise<Date | undefined> {
+  const seg = await exifr.parse(fsPath, {
+    mergeOutput: false,
+    xmp: true,
+    pick: ['DateTimeOriginal', 'CreateDate'],
+  });
+  if (!seg) return undefined;
+  const zoneless = [seg.exif?.DateTimeOriginal, seg.exif?.CreateDate].find(isValidDate);
+  if (zoneless) return toWallClockUTC(zoneless);
+  const zoned = [seg.xmp?.DateTimeOriginal, seg.xmp?.CreateDate].find(isValidDate);
+  return zoned;
+}
+
 async function readExif(fsPath: string, rel: string): Promise<ExifInfo> {
   try {
-    const d = await exifr.parse(fsPath, { iptc: true, xmp: true });
-    if (!d) return { keywords: [] };
+    const [d, date] = await Promise.all([
+      exifr.parse(fsPath, { iptc: true, xmp: true }),
+      readExifDate(fsPath),
+    ]);
+    if (!d) return { date, keywords: [] };
     const make = firstString(d.Make);
     const model = firstString(d.Model);
     const camera = model && make && !model.startsWith(make) ? `${make} ${model}` : model || make;
-    // Guard against Invalid Date — malformed EXIF would otherwise blow up
-    // Intl.DateTimeFormat at render time. EXIF wall-clock times are re-anchored
-    // to UTC so the rendered day does not depend on the build machine's zone.
-    const raw = isValidDate(d.DateTimeOriginal)
-      ? d.DateTimeOriginal
-      : isValidDate(d.CreateDate)
-        ? d.CreateDate
-        : undefined;
     return {
-      date: raw ? toWallClockUTC(raw) : undefined,
+      date,
       camera,
       lens: firstString(d.LensModel ?? d.Lens),
       focal: d.FocalLength ? `${Math.round(d.FocalLength)}mm` : undefined,
@@ -245,7 +267,9 @@ async function contentFingerprint(): Promise<string> {
   const meta = await getCollection('meta');
   return JSON.stringify([
     Object.keys(IMAGES).sort(),
-    meta.map((e) => [e.filePath, e.data]).sort(),
+    // `body` matters as much as `data`: an album's writeup is the markdown
+    // body, and a cached entry would keep rendering the old prose.
+    meta.map((e) => [e.filePath, e.data, e.body]).sort(),
   ]);
 }
 
@@ -360,6 +384,7 @@ async function build(): Promise<Gallery> {
   }
 
   singles.sort(autoCompare);
+  assertUniqueSlugs([...singles, ...albums.flatMap((a) => a.photos)]);
 
   const items: GalleryItem[] = [
     ...singles.map((p): GalleryItem => ({ kind: 'photo', slug: p.slug, date: p.date, photo: p })),

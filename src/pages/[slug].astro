@@ -11,6 +11,7 @@ import Shell from '../layouts/Shell.astro';
 import AlbumFeed from '../components/AlbumFeed.astro';
 import Lightbox from '../components/Lightbox.astro';
 import { getGallery, formatDate, type Album } from '../lib/photos';
+import { reservedRouteNames } from '../lib/naming';
 import { getPages, type PageEntry } from '../lib/pages';
 import { ogRendition } from '../lib/images';
 import { withBase } from '../lib/url';
@@ -21,11 +22,8 @@ export async function getStaticPaths() {
      name. Modules are never imported — only their paths are read. (This has to
      live inside getStaticPaths: Astro hoists it into its own module scope, so
      it cannot close over frontmatter variables.) */
-  const RESERVED = new Set(
+  const RESERVED = reservedRouteNames(
     Object.keys(import.meta.glob('/src/pages/**/*.{astro,md,mdx,html}'))
-      .map((key) => key.slice('/src/pages/'.length).replace(/\.(astro|md|mdx|html)$/, ''))
-      .map((route) => route.split('/')[0]!)
-      .filter((name) => name !== 'index' && !name.includes('['))
   );
 
   const gallery = await getGallery();

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
+  assertUniqueSlugs,
   autoCompare,
   compareNewestFirst,
   createRefResolver,
@@ -8,6 +9,7 @@ import {
   humanize,
   parseFileDate,
   parsePrefix,
+  reservedRouteNames,
   slugify,
   toWallClockUTC,
 } from '../src/lib/naming.ts';
@@ -55,6 +57,18 @@ describe('parseFileDate', () => {
   it('rejects impossible dates', () => {
     assert.equal(parseFileDate('2025-13-45-nope'), undefined);
     assert.equal(parseFileDate('no-date-here'), undefined);
+  });
+
+  /* JS rolls '2025-02-31' over to March 3rd instead of failing, so a day that
+     does not exist would silently reorder an album under a plausible date. */
+  it('rejects a day that does not exist in that month', () => {
+    assert.equal(parseFileDate('2025-02-31-bad'), undefined);
+    assert.equal(parseFileDate('2025-04-31-bad'), undefined);
+    assert.equal(parseFileDate('2023-02-29-bad'), undefined);
+  });
+
+  it('accepts a real leap day', () => {
+    assert.equal(parseFileDate('2024-02-29-leap')!.toISOString(), '2024-02-29T12:00:00.000Z');
   });
 });
 
@@ -196,5 +210,59 @@ describe('createRefResolver', () => {
   it('refuses an ambiguous basename', () => {
     const resolve = createRefResolver(photos, 'lisbon');
     assert.throws(() => resolve('dupe.jpg', 'photos:'), /more than one photo/);
+  });
+});
+
+describe('reservedRouteNames', () => {
+  it('reserves a top-level page and its directory-index equivalent', () => {
+    const names = reservedRouteNames([
+      '/src/pages/docs.astro',
+      '/src/pages/colophon/index.astro',
+    ]);
+    assert.deepEqual([...names].sort(), ['colophon', 'docs']);
+  });
+
+  it('ignores the index route and dynamic routes', () => {
+    const names = reservedRouteNames(['/src/pages/index.astro', '/src/pages/[slug].astro']);
+    assert.equal(names.size, 0);
+  });
+
+  /* '/legal/privacy/' does not occupy '/legal/', so an album may still be
+     called "legal" — reserving the first segment would block valid structure. */
+  it('does not reserve the parent of a nested page', () => {
+    const names = reservedRouteNames(['/src/pages/legal/privacy.astro']);
+    assert.equal(names.has('legal'), false);
+  });
+});
+
+describe('assertUniqueSlugs', () => {
+  it('accepts distinct slugs', () => {
+    assert.doesNotThrow(() =>
+      assertUniqueSlugs([
+        { slug: 'a', albumRel: 'a.jpg' },
+        { slug: 'b', albumRel: 'b.jpg' },
+      ])
+    );
+  });
+
+  /* slugify folds '/' and ' ' to '-', so these pairs are indistinguishable in
+     a URL fragment and would ship as duplicate DOM ids. */
+  it('rejects names that collide through slugification', () => {
+    assert.throws(
+      () =>
+        assertUniqueSlugs([
+          { slug: 'trip/a-shot', albumRel: 'a/shot.jpg' },
+          { slug: 'trip/a-shot', albumRel: 'a-shot.jpg' },
+        ]),
+      /"a\/shot\.jpg" and "a-shot\.jpg" both resolve/
+    );
+    assert.throws(
+      () =>
+        assertUniqueSlugs([
+          { slug: 'a-b', albumRel: 'a b.jpg' },
+          { slug: 'a-b', albumRel: 'a-b.jpg' },
+        ]),
+      /both resolve to the URL fragment "a-b"/
+    );
   });
 });

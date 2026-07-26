@@ -25,7 +25,7 @@
  */
 import sharp from 'sharp';
 import { copyFile, mkdir, readdir, stat, writeFile } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 
@@ -52,8 +52,13 @@ for (let i = 0; i < args.length; i++) {
   }
   if (!VALUE_FLAGS.has(name)) fail(`unknown flag --${name}`);
   const value = args[++i];
-  // '--title --dir x' used to silently set title to '--dir'.
-  if (value === undefined || value.startsWith('--')) fail(`--${name} needs a value`);
+  // '--title --dir x' used to silently set title to '--dir'. Only a value that
+  // is itself a known flag is a mistake; '--title "-- Untitled"' is legitimate.
+  const looksLikeFlag =
+    value !== undefined &&
+    value.startsWith('--') &&
+    (BOOLEAN_FLAGS.has(value.slice(2)) || VALUE_FLAGS.has(value.slice(2)));
+  if (value === undefined || looksLikeFlag) fail(`--${name} needs a value`);
   flags[name] = value;
 }
 
@@ -63,6 +68,8 @@ if (flags.single && flags.slug) fail('--slug has no meaning with --single (loose
 
 const srcDir = path.resolve(flags.dir.replace(/^~(?=\/)/, process.env.HOME ?? '~'));
 if (!existsSync(srcDir)) fail(`source folder not found: ${srcDir}`);
+// Without this, a file path reaches readdir() and throws a raw ENOTDIR stack.
+if (!statSync(srcDir).isDirectory()) fail(`--dir must be a folder, not a file: ${srcDir}`);
 
 const slugify = (s) =>
   s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'album';

@@ -98,6 +98,11 @@ src/styles/
 - Sub-folders inside an album stay part of that album; their photos keep the
   relative path as their metadata/reference key, so `a/shot.jpg` and
   `b/shot.jpg` do not collide and each can have its own `.md` sidecar.
+- Photo slugs must be unique site-wide (they are the Viewer's `data-slug`, the
+  entry's DOM id and the `/#slug` deep link). Because slugify folds `/`, ` `
+  and everything else to `-`, `sub/shot.jpg` and `sub-shot.jpg` collide —
+  `assertUniqueSlugs` fails the build naming both files rather than shipping a
+  duplicate id that deep-links to the wrong photo.
 - A photo's site-wide slug is `album-slug/file-slug` or `file-slug`; the
   gallery index deep-links Viewer position as `/#<slug>`.
 - **Entry pages**: `src/content/pages/<name>.md` → `/<name>/`, rendered in
@@ -185,10 +190,13 @@ ordering, dates, and captions.
 - **EXIF is read from the source file on disk** (`process.cwd()` + glob
   key) at build time; nothing EXIF-related ships to the client. Unreadable
   metadata warns and degrades rather than failing the build.
-- **Dates render in UTC.** EXIF wall-clock times are re-anchored to UTC
-  (`toWallClockUTC`) and formatted with `timeZone: 'UTC'`, so a build on a
-  laptop and a build on a CI runner print the same day. Do not "simplify"
-  either half away.
+- **Dates render in UTC.** EXIF times carry no zone, so exifr materialises
+  them in the build machine's zone; `readExifDate()` reads them from the
+  *exif segment* (`mergeOutput: false`) and re-anchors them with
+  `toWallClockUTC`, while a date coming from XMP — which may carry a real
+  offset — is used as parsed. Formatting then pins `timeZone: 'UTC'`. All
+  three halves are load-bearing; a build on a laptop and a build on a CI
+  runner must print the same day.
 - **The Viewer is JS-only** by design: the feed is `display:none` in Grid
   mode, so `#slug` deep links and thumbnail-to-Viewer need script. The Grid
   itself, album pages and entry pages are fully static.
@@ -205,12 +213,18 @@ ordering, dates, and captions.
 5. Dark mode is warm near-black (`#1a1918`), never cool gray; toggle via
    `data-theme` on `<html>`.
 6. Every page ends with the `░▒▓ EOF ▓▒░` flourish (Shell.astro).
+7. Only `.site-content` scrolls, so the keyboard needs it focused before the
+   arrow keys work — that is what the skip link is for. Do not "helpfully"
+   focus it on load instead: that puts the first Tab inside the content, past
+   the skip link and the chrome nav.
 
 ## Extension recipes
 
 - **New static page in src/pages/**: nothing to register — [slug].astro
-  derives its reserved-name list from `src/pages/**` and will fail the build
-  if an album or entry page would shadow it.
+  derives its reserved-name list from `src/pages/**` (`reservedRouteNames`)
+  and fails the build if an album or entry page would shadow it. Only
+  `<name>.astro` and `<name>/index.astro` reserve `/<name>/`; a deeper page
+  like `legal/privacy.astro` leaves `/legal/` free for an album.
 - **New chrome variant**: add a branch in Shell.astro's body, style it in
   shell.css under `[data-chrome="yourname"]`, extend the `chrome` union in
   gallery.config.ts. If it adds a left column, set `--content-offset` so

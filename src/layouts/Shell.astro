@@ -159,13 +159,14 @@ const nav = [...pageLinks, ...configLinks];
         </div>
       </div>
     </div>
-    <script>
-      /* Keyboard scrolling works immediately without a click — but never steal
-         focus from a fragment target (/#photo-slug, or the skip link), which
-         the browser has already resolved by the time this runs. */
-      if (!location.hash) {
-        document.querySelector<HTMLElement>('.site-content')?.focus({ preventScroll: true });
-      }
-    </script>
+    <!--
+      Only .site-content scrolls, so the page has to be focused before the
+      arrow keys do anything. This used to be done by focusing it on load,
+      which put the very first Tab *inside* the content — past the skip link
+      and past the chrome nav, reachable again only by tabbing backwards.
+      The skip link does the same job in one discoverable keystroke (its
+      target carries tabindex="-1", so activating it takes focus), and leaves
+      the standard tab order intact.
+    -->
   </body>
 </html>
