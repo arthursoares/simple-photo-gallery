@@ -57,7 +57,12 @@ export default {
   /** Tertiary EXIF line in Viewer captions + lightbox. Set to '' to disable. */
   exifTemplate: '{camera} · {focal} · {aperture} · {shutter} · ISO {iso}',
 
-  /** Date format for the {date} token. */
+  /**
+   * Date format for the {date} token. Rendered in UTC unless you set an
+   * explicit `timeZone` here: EXIF times carry no zone, so anchoring them
+   * keeps a photo's printed day identical whether the site was built on your
+   * laptop or on a CI runner in another hemisphere.
+   */
   dateFormat: { month: 'short', day: '2-digit', year: 'numeric' } as Intl.DateTimeFormatOptions,
   locale: 'en-US',
 

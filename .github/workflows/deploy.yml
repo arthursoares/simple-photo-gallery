@@ -38,6 +38,23 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # The suite is pure functions (slugs, ordering, captions); running it in
+      # two far-apart zones is what keeps date rendering timezone-independent.
+      - name: Test
+        run: |
+          npm test
+          TZ=Pacific/Kiritimati npm test
+          TZ=Pacific/Midway npm test
+
+      # Astro keeps generated renditions here; reusing them across runs means a
+      # push that adds one photo does not re-encode the whole gallery.
+      - name: Restore image cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules/.astro
+          key: astro-assets-${{ hashFiles('src/content/photos/**') }}
+          restore-keys: astro-assets-
+
       - name: Build
         run: npm run build
         env:

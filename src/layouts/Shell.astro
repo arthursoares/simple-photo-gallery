@@ -15,11 +15,22 @@ interface Props {
   description?: string;
   /** Right-side counter text, e.g. "24 photos". */
   count?: string;
+  /** Preview image for social cards — a built rendition's src. */
+  image?: string;
 }
 
-const { title, description, count } = Astro.props;
+const { title, description, count, image } = Astro.props;
 const pageTitle = title ? `${title} — ${config.title}` : config.title;
+const pageDescription = description ?? config.description;
 const chrome = config.chrome;
+
+/* Social cards and the canonical link need absolute URLs, which only exist
+   once `site` is known (the Pages workflow injects SITE_URL; locally it is
+   unset and these tags are simply omitted). */
+const absolute = (p: string) => (Astro.site ? new URL(p, Astro.site).href : undefined);
+const canonical = absolute(Astro.url.pathname);
+const ogImage = image ? absolute(image) : undefined;
+
 /* Chrome menu = markdown entry pages (src/content/pages/, nav: true)
    followed by the manual links from gallery.config nav. */
 const pageLinks = (await navPages()).map((p) => ({
@@ -27,11 +38,18 @@ const pageLinks = (await navPages()).map((p) => ({
   href: withBase(`${p.id}/`),
   external: false,
 }));
+/* Schemes that may appear verbatim in a nav href. Anything else with a scheme
+   (notably `javascript:`) is refused rather than rendered into an anchor. */
+const SAFE_SCHEMES = /^(https?|mailto|tel):/i;
 const configLinks = (config.nav ?? []).map((link) => {
-  // Any scheme (https:, mailto:, tel:, …) is left untouched; only http(s)
-  // gets the new-tab treatment; everything else is an internal path.
   const hasScheme = /^[a-z][a-z0-9+.-]*:/i.test(link.href);
-  const external = /^https?:\/\//.test(link.href);
+  if (hasScheme && !SAFE_SCHEMES.test(link.href)) {
+    throw new Error(
+      `gallery.config.ts: nav link "${link.label}" uses an unsupported URL scheme ` +
+        `(${link.href}). Use http(s), mailto, tel, or a site-relative path.`
+    );
+  }
+  const external = /^https?:\/\//i.test(link.href);
   return { ...link, external, href: hasScheme ? link.href : withBase(link.href) };
 });
 const nav = [...pageLinks, ...configLinks];
@@ -44,7 +62,16 @@ const nav = [...pageLinks, ...configLinks];
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="generator" content={Astro.generator} />
     <title>{pageTitle}</title>
-    <meta name="description" content={description ?? config.description} />
+    <meta name="description" content={pageDescription} />
+    {canonical && <link rel="canonical" href={canonical} />}
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={pageDescription} />
+    <meta property="og:site_name" content={config.title} />
+    {canonical && <meta property="og:url" content={canonical} />}
+    {ogImage && <meta property="og:image" content={ogImage} />}
+    <meta name="twitter:card" content={ogImage ? 'summary_large_image' : 'summary'} />
+    {config.author && <meta name="author" content={config.author} />}
     <link rel="icon" type="image/svg+xml" href={withBase('favicon.svg')} />
     <link rel="preload" href={atkinsonUrl} as="font" type="font/woff2" crossorigin />
     <script is:inline>
@@ -60,6 +87,9 @@ const nav = [...pageLinks, ...configLinks];
     </script>
   </head>
   <body data-chrome={chrome} data-mobile-nav={config.mobileNav ?? 'kebab'}>
+    <!-- Underscore-prefixed so it can never collide with a photo slug
+         (slugify only ever emits [a-z0-9-]), which entries use as their id. -->
+    <a class="skip-link" href="#_content">Skip to content</a>
     <div class="app-frame">
       {
         chrome === 'frame' && (
@@ -121,7 +151,7 @@ const nav = [...pageLinks, ...configLinks];
             </aside>
           )
         }
-        <div class="site-content" tabindex="-1">
+        <div class="site-content" id="_content" tabindex="-1">
           <slot />
           <div class="content-end">
             <span class="content-end-text">░▒▓ EOF ▓▒░</span>
@@ -130,8 +160,12 @@ const nav = [...pageLinks, ...configLinks];
       </div>
     </div>
     <script>
-      // Keyboard scrolling works immediately without a click.
-      document.querySelector<HTMLElement>('.site-content')?.focus({ preventScroll: true });
+      /* Keyboard scrolling works immediately without a click — but never steal
+         focus from a fragment target (/#photo-slug, or the skip link), which
+         the browser has already resolved by the time this runs. */
+      if (!location.hash) {
+        document.querySelector<HTMLElement>('.site-content')?.focus({ preventScroll: true });
+      }
     </script>
   </body>
 </html>

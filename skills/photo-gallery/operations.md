@@ -92,6 +92,9 @@ schema violations, `photos:`/`cover` entries referencing missing files.
   check extensions (`.jpg/.jpeg/.png/.webp/.avif`; HEIC is not supported —
   convert first, preserving EXIF).
 - CI fails on `Slug collision` → rename the folder/page in conflict.
+- CI fails on `cover:`/`photos: references "…"` → the index.md names a file
+  that is not in the album (filenames are case-sensitive); the error lists the
+  photos that were found — fix the reference or the filename.
 - Photo order looks wrong → the photos likely lack EXIF dates; add a
   `photos:` list or numeric filename prefixes.
 - New content not on the site → check `gh run list` (deploy may have failed

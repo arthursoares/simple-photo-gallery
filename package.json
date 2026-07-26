@@ -7,8 +7,12 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
     "demo": "node scripts/make-demo-photos.mjs",
     "album": "node scripts/add-album.mjs"
+  },
+  "engines": {
+    "node": "^18.20.8 || ^20.3.0 || >=22.0.0"
   },
   "dependencies": {
     "astro": "^5.8.0",

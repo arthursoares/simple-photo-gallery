@@ -11,6 +11,27 @@ html, body {
     height: 100%;
 }
 
+/* Skip link — off-screen until focused, then a hard-edged chip over the frame. */
+.skip-link {
+    position: fixed;
+    top: -100%;
+    left: var(--space-4);
+    z-index: 2000;
+    font-family: var(--font-mono);
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-mono);
+    color: var(--text-primary);
+    background: var(--canvas);
+    border: var(--border-width) solid var(--border);
+    box-shadow: var(--shadow-sm);
+    padding: var(--space-2) var(--space-3);
+}
+.skip-link:focus {
+    top: var(--space-4);
+}
+
 /* App frame — fixed accent-less border around the viewport + amber stripe. */
 .app-frame {
     position: fixed;

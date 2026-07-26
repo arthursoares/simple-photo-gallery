@@ -6,7 +6,7 @@
  */
 ---
 
-<div class="gx" data-open="false" role="dialog" aria-modal="true" aria-label="Photo viewer" tabindex="-1" hidden>
+<div class="gx" role="dialog" aria-modal="true" aria-label="Photo viewer" tabindex="-1" hidden>
   <div class="gx-backdrop" data-gx-close aria-hidden="true"></div>
 
   <figure class="gx-frame">
@@ -78,7 +78,6 @@
       lastFocus = document.activeElement;
       render();
       root.hidden = false;
-      root.setAttribute('data-open', 'true');
       if (scroller) scroller.style.overflow = 'hidden';
       /* Move focus into the dialog itself (tabindex=-1) rather than onto the
          close button — keeps keyboard/SR context here without painting a
@@ -91,7 +90,6 @@
     }
 
     function close() {
-      root.setAttribute('data-open', 'false');
       root.hidden = true;
       if (scroller) scroller.style.overflow = '';
       if (lastFocus instanceof HTMLElement) {
@@ -135,7 +133,7 @@
     );
 
     document.addEventListener('keydown', (e) => {
-      if (root.getAttribute('data-open') !== 'true') return;
+      if (root.hidden) return;
       switch (e.key) {
         case 'ArrowRight':
         case 'ArrowDown':

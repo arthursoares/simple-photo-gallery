@@ -26,11 +26,13 @@ const label = isAlbum ? item.album.title : caption;
   data-slug={item.slug}
   aria-label={isAlbum ? `Open photo album: ${label}` : `View ${label}`}
 >
+  {/* The link's aria-label already names this tile; an alt here would make a
+      screen reader announce the same text twice, so the image is decorative. */}
   <Image
     class="gv-thumb-img"
     src={photo.image}
     {...thumbAttrs(photo.image)}
-    alt={photo.alt}
+    alt=""
     loading={index === 0 ? 'eager' : 'lazy'}
     fetchpriority={index === 0 ? 'high' : undefined}
   />

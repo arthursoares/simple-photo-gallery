@@ -39,6 +39,7 @@ Run locally with:
 ```bash
 npm install
 npm run dev        # http://localhost:4321
+npm test           # pure-helper test suite (node ≥ 22.6)
 ```
 
 No photos yet? `npm run demo` generates placeholders (with EXIF) to play with.
