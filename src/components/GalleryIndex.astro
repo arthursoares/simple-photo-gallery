@@ -14,7 +14,10 @@ interface Props {
 
 const { items } = Astro.props;
 const albumCount = items.filter((i) => i.kind === 'album').length;
-const photoCount = items.length - albumCount;
+/* Count photographs, not tiles — an album tile stands for all of its photos.
+   This has to agree with the chrome counter in index.astro, which is computed
+   the same way; counting tiles here made the two disagree on every page. */
+const photoCount = items.reduce((n, i) => n + (i.kind === 'album' ? i.album.photos.length : 1), 0);
 const countLabel = albumCount
   ? `${photoCount} photos · ${albumCount} albums`
   : `${photoCount} photos`;
@@ -48,15 +51,19 @@ const countLabel = albumCount
         </div>
 
         <div class="gv-feed">
-          {items.map((item) => (
-            <Entry item={item} />
+          {items.map((item, i) => (
+            <Entry item={item} index={i} total={items.length} />
           ))}
         </div>
 
-        <div class="gv-status">
+        {/* Purely visual: the counter used to be a live region, which made a
+            screen reader announce every position while free-scrolling. Each
+            entry carries its position in its accessible name instead, so it is
+            announced once, when navigation actually moves focus there. */}
+        <div class="gv-status" aria-hidden="true">
           <span class="gv-status-hint">↑↓ navigate · esc grid</span>
           <span class="gv-status-sep">·</span>
-          <span class="gv-status-count" role="status" aria-live="polite">
+          <span class="gv-status-count">
             <b class="gv-cur">1</b> / <span class="gv-total">{items.length}</span>
           </span>
         </div>
@@ -198,14 +205,17 @@ const countLabel = albumCount
       return best;
     }
 
-    /* IntersectionObserver tracks the most-visible photo while free-scrolling. */
+    /* IntersectionObserver tracks the most-visible photo while free-scrolling.
+       Index lookups go through a Map — indexOf() per observed entry made every
+       callback O(n²) on large galleries. */
+    const indexOf = new Map(entries.map((el, i) => [el, i]));
     const ratios = entries.map(() => 0);
     if ('IntersectionObserver' in window && entries.length) {
       const io = new IntersectionObserver(
         (ents) => {
           ents.forEach((e) => {
-            const idx = entries.indexOf(e.target as HTMLElement);
-            if (idx >= 0) ratios[idx] = e.intersectionRatio;
+            const idx = indexOf.get(e.target as HTMLElement);
+            if (idx !== undefined) ratios[idx] = e.intersectionRatio;
           });
           if (programmatic || modes.getAttribute('data-mode') !== 'viewer') return;
           let best = 0;
@@ -256,7 +266,7 @@ const countLabel = albumCount
         if (t.classList.contains('gv-thumb--album')) return;
         e.preventDefault();
         const target = entryBySlug(t.getAttribute('data-slug') || '');
-        enterViewer(target ? entries.indexOf(target) : 0);
+        enterViewer(target ? (indexOf.get(target) ?? 0) : 0);
       });
     });
 
@@ -318,6 +328,6 @@ const countLabel = albumCount
       slug = decodeURIComponent(slug);
     } catch {}
     const target = entryBySlug(slug);
-    if (target) enterViewer(entries.indexOf(target));
+    if (target) enterViewer(indexOf.get(target) ?? 0);
   }
 </script>

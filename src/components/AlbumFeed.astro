@@ -1,0 +1,29 @@
+---
+/**
+ * An album's body: the optional writeup from its index.md, then the
+ * photo-essay feed. Shared by the album route ([slug].astro) and single-mode
+ * 'essay' presentation (index.astro), which previously carried two copies of
+ * this markup.
+ */
+import { render, type CollectionEntry } from 'astro:content';
+import PhotoEssay from './PhotoEssay.astro';
+import type { Photo } from '../lib/photos';
+
+interface Props {
+  photos: Photo[];
+  /** The album's index.md, if it has one — its body is the writeup. */
+  entry?: CollectionEntry<'meta'> | null;
+}
+
+const { photos, entry } = Astro.props;
+const Writeup = entry ? (await render(entry)).Content : null;
+---
+
+{
+  Writeup && (
+    <div class="pe-writeup">
+      <Writeup />
+    </div>
+  )
+}
+<PhotoEssay photos={photos} />

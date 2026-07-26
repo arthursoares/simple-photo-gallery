@@ -10,8 +10,9 @@ Operate a gallery built with
 Everything is plain files + git: photos live in `src/content/photos/`
 (a folder = an album, a loose file = a single photo), optional markdown adds
 metadata, and every push to `main` deploys via GitHub Actions. The CI build
-is the validator — bad frontmatter, slug collisions, and broken references
-fail it loudly — and every publish is a revertable commit.
+is the validator — bad frontmatter, slug collisions, and broken `cover:` /
+`photos:` references fail it loudly, naming the file that is missing — and
+every publish is a revertable commit.
 
 ## Route by task
 
@@ -27,7 +28,8 @@ fail it loudly — and every publish is a revertable commit.
 ## Prerequisites
 
 - `gh` authenticated with push access to the target repo (`gh auth status`);
-  node ≥ 18. If auth fails, stop and ask the user.
+  node ≥ 18.20.8 (the range Astro itself supports). If auth fails, stop
+  and ask the user.
 - Get the repo locally: `gh repo clone <user>/<repo> <dir>` (or `git pull` an
   existing clone), then `npm install` once.
 

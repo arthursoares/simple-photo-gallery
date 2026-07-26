@@ -29,3 +29,15 @@ export const fullRendition = (image: ImageMetadata) => ({
   width: Math.min(config.images.full.width, image.width),
   quality: config.images.quality,
 });
+
+/**
+ * Social-card rendition. Deliberately JPEG and modest in size: link unfurlers
+ * are far less consistent about WebP than browsers are, and og:image is the
+ * one URL we cannot re-negotiate with the client.
+ */
+export const ogRendition = (image: ImageMetadata) => ({
+  src: image,
+  width: Math.min(1200, image.width),
+  format: 'jpeg' as const,
+  quality: config.images.quality,
+});

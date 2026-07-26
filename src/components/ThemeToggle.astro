@@ -2,6 +2,8 @@
 /* Light/dark toggle — instant state, persisted to localStorage. */
 ---
 
+<!-- The label stays constant and aria-pressed carries the state; a label that
+     changed with the state would be announced as a different control. -->
 <button type="button" class="theme-toggle" aria-label="Dark mode" aria-pressed="false">◐</button>
 
 <script>

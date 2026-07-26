@@ -6,29 +6,34 @@
  * prominent "view album →"; singles get a quiet "full ↗" to the original.
  */
 import { Image, getImage } from 'astro:assets';
-import config from '../../gallery.config';
-import { renderTemplate } from '../lib/caption';
-import { captionContext, photoExifLine, formatDate, type GalleryItem } from '../lib/photos';
+import { photoExifLine, formatDate, type GalleryItem } from '../lib/photos';
 import { viewerAttrs, fullRendition } from '../lib/images';
 import { withBase } from '../lib/url';
 
 interface Props {
   item: GalleryItem;
+  /** Position in the Viewer feed — announced when keyboard nav lands here. */
+  index: number;
+  total: number;
 }
 
-const { item } = Astro.props;
+const { item, index, total } = Astro.props;
 const isAlbum = item.kind === 'album';
 const photo = item.photo;
 const title = isAlbum ? item.album.title : photo.title;
 const date = formatDate(item.date);
-const sub = isAlbum
-  ? `${item.album.photos.length} photos`
-  : renderTemplate(config.exifTemplate, captionContext(photo)) || photo.caption;
+const sub = isAlbum ? `${item.album.photos.length} photos` : photoExifLine(photo) || photo.caption;
 const full = await getImage(fullRendition(photo.image));
 const albumHref = isAlbum ? withBase(`${item.slug}/`) : undefined;
 ---
 
-<article class="gv-entry" data-slug={item.slug} tabindex="-1">
+<article
+  class="gv-entry"
+  data-slug={item.slug}
+  id={item.slug}
+  tabindex="-1"
+  aria-label={`${index + 1} of ${total}: ${title}`}
+>
   <figure class:list={['gv-frame', { 'gv-frame--album': isAlbum }]}>
     <Image
       class="gv-img"

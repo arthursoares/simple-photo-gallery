@@ -1,46 +1,36 @@
 ---
-import { render } from 'astro:content';
+import { getImage } from 'astro:assets';
 import config from '../../gallery.config';
 import Shell from '../layouts/Shell.astro';
 import GalleryIndex from '../components/GalleryIndex.astro';
-import PhotoEssay from '../components/PhotoEssay.astro';
+import AlbumFeed from '../components/AlbumFeed.astro';
 import Lightbox from '../components/Lightbox.astro';
-import { getGallery, formatDate, type GalleryItem } from '../lib/photos';
+import { getGallery, singleAlbum, formatDate, type GalleryItem } from '../lib/photos';
+import { ogRendition } from '../lib/images';
 
 const gallery = await getGallery();
+/* Single mode: the site IS one album — a real album, or the loose photos
+   wrapped in one (see singleAlbum). With no content at all this is null and
+   we fall through to gallery rendering, which has the proper empty state. */
+const album = singleAlbum(gallery);
 
-/* Single mode: the site IS one album. If the content folder only holds loose
-   photos, treat them as that album. With no content at all (forced single
-   mode, empty folder), fall back to gallery rendering — it has the proper
-   empty state. */
-const single = gallery.mode === 'single' && (gallery.albums.length > 0 || gallery.singles.length > 0);
-const album = single
-  ? (gallery.albums[0] ?? {
-      slug: 'photos',
-      title: config.title,
-      date: undefined,
-      cover: gallery.singles[0]!,
-      photos: gallery.singles,
-      tags: [],
-      entry: undefined,
-    })
-  : null;
-
-const items: GalleryItem[] = single
-  ? album!.photos.map((p) => ({ kind: 'photo' as const, slug: p.slug, date: p.date, photo: p }))
+const items: GalleryItem[] = album
+  ? album.photos.map((p) => ({ kind: 'photo' as const, slug: p.slug, date: p.date, photo: p }))
   : gallery.items;
 
-const essay = single && config.presentation === 'essay';
-const photoCount = single
-  ? album!.photos.length
+const essay = album !== null && config.presentation === 'essay';
+const photoCount = album
+  ? album.photos.length
   : gallery.singles.length + gallery.albums.reduce((n, a) => n + a.photos.length, 0);
 
-const title = single && album!.title !== config.title ? album!.title : config.title;
-const date = single ? formatDate(album!.date) : undefined;
-const Writeup = single && album!.entry ? (await render(album!.entry)).Content : null;
+const title = album && album.title !== config.title ? album.title : config.title;
+const date = album ? formatDate(album.date) : undefined;
+
+const ogPhoto = album?.cover ?? gallery.items[0]?.photo;
+const ogImage = ogPhoto ? (await getImage(ogRendition(ogPhoto.image))).src : undefined;
 ---
 
-<Shell count={`${photoCount} photos`}>
+<Shell count={`${photoCount} photos`} image={ogImage}>
   <main class="site-main">
     <section class="w-pgh">
       <div class="w-pgh-kick">
@@ -62,15 +52,8 @@ const Writeup = single && album!.entry ? (await render(album!.entry)).Content : 
     </section>
 
     {
-      essay ? (
-        <>
-          {Writeup && (
-            <div class="pe-writeup">
-              <Writeup />
-            </div>
-          )}
-          <PhotoEssay photos={album!.photos} />
-        </>
+      essay && album ? (
+        <AlbumFeed photos={album.photos} entry={album.entry} />
       ) : (
         <GalleryIndex items={items} />
       )

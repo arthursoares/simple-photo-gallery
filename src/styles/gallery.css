@@ -40,8 +40,6 @@
     text-decoration: none;
 }
 .gv-thumb--album { box-shadow: var(--shadow-pop); }
-.gv-thumb--album:hover,
-.gv-thumb--album:focus-visible { box-shadow: var(--shadow-pop); }
 .gv-thumb-img {
     width: 100%;
     height: auto;
@@ -53,6 +51,11 @@
     box-shadow: var(--shadow-md);
     outline: none;
 }
+/* Albums keep their amber shadow on hover/focus. This has to come AFTER the
+   plain .gv-thumb rule above: the two have equal specificity, so source order
+   decides — when it sat before, album tiles silently lost the pop shadow. */
+.gv-thumb--album:hover,
+.gv-thumb--album:focus-visible { box-shadow: var(--shadow-pop); }
 
 /* Album thumbnails: an explicit "▣ Album" pop pill (top-left) + amber shadow
    so the multi-photo nature reads at a glance. */
